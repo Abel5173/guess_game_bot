@@ -1,14 +1,15 @@
+# Only keep constants relevant to the Impostor Game or general bot operation
+
 HELP_TEXT = (
-    "<b>Guess-Game-Bot Help</b>\n\n"
-    "Use /startgame in a group to begin.\n"
-    "Choose a game and follow the instructions.\n\n"
-    "<b>Games:</b>\n"
-    "🧠 <b>Guess Game</b>: 2 players, guess each other's secret 4-digit number.\n"
-    "🕵️ <b>Impostor Game</b>: 4+ players, find the impostor with AI clues.\n\n"
-    "<b>Commands:</b>\n"
-    "/startgame - Start a new game\n"
+    "<b>Impostor Game Bot Help</b>\n\n"
+    "🕵️ <b>Impostor Game</b>: Play a social deduction game with your friends!\n"
+    "- Use /startgame in a group to begin.\n"
+    "- Join the game, complete tasks, discuss, and vote out the impostor!\n\n"
+    "Commands:\n"
+    "/startgame - Start a new Impostor Game\n"
     "/help - Show this help message\n"
-    "/about - About the bot\n"
+    "/status - Show current game status\n"
+    "/reset - Reset the game in this group\n"
 )
 
 ABOUT_TEXT = (
