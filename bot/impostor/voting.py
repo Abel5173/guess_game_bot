@@ -37,8 +37,7 @@ class VotingManager:
         self.core.votes.clear()
         return (
             voted_out,
-            f"{
-            self.core.players[voted_out]['name']} was ejected!",
+            f"{self.core.players[voted_out]['name']} was ejected!",
         )
 
     async def handle_vote(
