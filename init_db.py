@@ -5,6 +5,7 @@ Creates all necessary database tables before running tests.
 """
 
 import os
+from sqlalchemy import text
 from bot.database import init_db, SessionLocal, engine
 
 if __name__ == "__main__":
@@ -16,7 +17,7 @@ if __name__ == "__main__":
     
     # Verify tables were created
     with engine.connect() as conn:
-        result = conn.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        result = conn.execute(text("SELECT name FROM sqlite_master WHERE type='table';"))
         tables = [row[0] for row in result.fetchall()]
         print(f"Created tables: {tables}")
         
