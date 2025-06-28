@@ -12,10 +12,10 @@ async def test_full_game_flow():
     game = ImpostorGame()
     context = AsyncMock()
     users = [
-        SimpleNamespace(id=1, first_name='Alice'),
-        SimpleNamespace(id=2, first_name='Bob'),
-        SimpleNamespace(id=3, first_name='Charlie'),
-        SimpleNamespace(id=4, first_name='Dana'),
+        SimpleNamespace(id=1, first_name="Alice"),
+        SimpleNamespace(id=2, first_name="Bob"),
+        SimpleNamespace(id=3, first_name="Charlie"),
+        SimpleNamespace(id=4, first_name="Dana"),
     ]
     # Simulate joining
     for user in users:
@@ -66,7 +66,7 @@ async def test_full_game_flow():
     await game.handle_start_voting(update, context)
     # Simulate rules, profile, leaderboard, end game
     update = MagicMock()
-    update.effective_user = SimpleNamespace(id=42, first_name='TestUser')
+    update.effective_user = SimpleNamespace(id=42, first_name="TestUser")
     update.callback_query = MagicMock()
     update.callback_query.message.reply_text = AsyncMock()
     update.callback_query.answer = AsyncMock()
@@ -88,7 +88,7 @@ async def test_full_game_flow():
 async def test_edge_cases():
     game = ImpostorGame()
     context = AsyncMock()
-    user = SimpleNamespace(id=1, first_name='Solo')
+    user = SimpleNamespace(id=1, first_name="Solo")
     # Not enough players to start
     update = MagicMock()
     update.effective_user = user
@@ -102,8 +102,8 @@ async def test_edge_cases():
     # Double join
     await game.handle_join_game(update, context)
     # Invalid vote
-    game.core.phase = 'voting'
-    update.callback_query.data = 'vote_999'
+    game.core.phase = "voting"
+    update.callback_query.data = "vote_999"
     await game.handle_vote(update, context)
     # Show rules with no callback_query
     update = MagicMock()
@@ -119,14 +119,15 @@ async def test_edge_cases():
 @pytest.mark.asyncio
 async def test_task_types():
     from bot.tasks import clue_tasks
-    player_names = ['Alice', 'Bob', 'Charlie', 'Dana']
+
+    player_names = ["Alice", "Bob", "Charlie", "Dana"]
     # Test all task generators
     for func in [
         clue_tasks.emoji_decode_task,
         clue_tasks.quick_math_task,
         clue_tasks.word_unscramble_task,
         clue_tasks.trivia_task,
-        clue_tasks.pattern_recognition_task
+        clue_tasks.pattern_recognition_task,
     ]:
         ttype, puzzle, answer = func()
         assert isinstance(ttype, str)

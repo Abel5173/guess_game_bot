@@ -12,12 +12,13 @@ class AIClueManager:
 
     async def send_private_ai_clues(self, context):
         for uid, p in self.core.players.items():
-            if not p['alive']:
+            if not p["alive"]:
                 continue
             try:
-                history = "\n".join(
-                    self.core.discussion_history[-3:]) or "Not much was said."
-                if p['role'] == 'crewmate':
+                history = (
+                    "\n".join(self.core.discussion_history[-3:]) or "Not much was said."
+                )
+                if p["role"] == "crewmate":
                     prompt = (
                         f"Players: {', '.join([pl['name'] for pid, pl in self.core.get_alive_players().items() if pid != uid])}\n"
                         f"Discussion: {history}\n"
@@ -32,7 +33,7 @@ class AIClueManager:
                 await context.bot.send_message(
                     uid,
                     f"🤖 <b>AI Clue</b> for {p['name']}\n\n{clue}",
-                    parse_mode=ParseMode.HTML
+                    parse_mode=ParseMode.HTML,
                 )
             except Exception:
                 pass

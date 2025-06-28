@@ -1,1 +1,1 @@
-# Package marker for mypy module resolution 
+# Package marker for mypy module resolution

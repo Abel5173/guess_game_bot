@@ -6,7 +6,7 @@ TITLE_THRESHOLDS = [
     (60, "Sleuth"),
     (120, "Veteran"),
     (200, "Mastermind"),
-    (300, "Legend")
+    (300, "Legend"),
 ]
 
 

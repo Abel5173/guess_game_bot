@@ -2,26 +2,37 @@ from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 
 
 def main_menu():
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🕹️ Start New Game", callback_data="startgame")],
-        [InlineKeyboardButton("🏆 View Leaderboard", callback_data="leaderboard")],
-        [InlineKeyboardButton("📄 My Profile", callback_data="profile")],
-    ])
+    return InlineKeyboardMarkup(
+        [
+            [InlineKeyboardButton("🕹️ Start New Game", callback_data="startgame")],
+            [InlineKeyboardButton("🏆 View Leaderboard", callback_data="leaderboard")],
+            [InlineKeyboardButton("📄 My Profile", callback_data="profile")],
+        ]
+    )
 
 
 def lobby_menu():
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🙋 Join Game", callback_data="join_impostor")],
-        [InlineKeyboardButton("🚦 Start Game", callback_data="start_impostor")],
-        [InlineKeyboardButton("📊 Status", callback_data="show_status")],
-    ])
+    return InlineKeyboardMarkup(
+        [
+            [InlineKeyboardButton("🙋 Join Game", callback_data="join_impostor")],
+            [InlineKeyboardButton("🚦 Start Game", callback_data="start_impostor")],
+            [InlineKeyboardButton("📊 Status", callback_data="show_status")],
+        ]
+    )
 
 
 def voting_menu(alive_players):
     return InlineKeyboardMarkup(
-        [[InlineKeyboardButton(f"🚀 Vote {p['name']} {p.get('title', '')}", callback_data=f"vote_{uid}")]
-         for uid, p in alive_players.items()] +
-        [[InlineKeyboardButton("🛑 Skip Vote", callback_data="vote_skip")]]
+        [
+            [
+                InlineKeyboardButton(
+                    f"🚀 Vote {p['name']} {p.get('title', '')}",
+                    callback_data=f"vote_{uid}",
+                )
+            ]
+            for uid, p in alive_players.items()
+        ]
+        + [[InlineKeyboardButton("🛑 Skip Vote", callback_data="vote_skip")]]
     )
 
 

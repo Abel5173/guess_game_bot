@@ -4,9 +4,7 @@ from types import SimpleNamespace
 from bot.impostor import ImpostorGame
 from bot.database import init_db, SessionLocal
 from bot.database.models import Player
-from bot.ui.buttons import (
-    main_menu, voting_menu, join_game_menu, confirm_end_game
-)
+from bot.ui.buttons import main_menu, voting_menu, join_game_menu, confirm_end_game
 from bot.impostor.utils import calculate_title
 from bot.tasks import clue_tasks
 
@@ -35,18 +33,19 @@ def context():
 def users():
     """Create test users"""
     return [
-        SimpleNamespace(id=1, first_name='Alice'),
-        SimpleNamespace(id=2, first_name='Bob'),
-        SimpleNamespace(id=3, first_name='Charlie'),
-        SimpleNamespace(id=4, first_name='Dana'),
-        SimpleNamespace(id=5, first_name='Eve'),
-        SimpleNamespace(id=6, first_name='Frank'),
+        SimpleNamespace(id=1, first_name="Alice"),
+        SimpleNamespace(id=2, first_name="Bob"),
+        SimpleNamespace(id=3, first_name="Charlie"),
+        SimpleNamespace(id=4, first_name="Dana"),
+        SimpleNamespace(id=5, first_name="Eve"),
+        SimpleNamespace(id=6, first_name="Frank"),
     ]
 
 
 @pytest.fixture
 def update_template():
     """Create a template for update objects"""
+
     def create_update(user, callback_data=None):
         update = MagicMock()
         update.effective_user = user
@@ -62,7 +61,9 @@ def update_template():
         if callback_data:
             update.callback_query.data = callback_data
         return update
+
     return create_update
+
 
 # ============================================================================
 # CORE GAME LOGIC TESTS
@@ -73,19 +74,19 @@ def update_template():
 async def test_game_initialization(game):
     """Test game initialization with default and custom config"""
     # Test default config
-    assert game.core.config['min_players'] == 4
-    assert game.core.config['impostor_count'] == 1
-    assert game.core.phase == 'waiting'
+    assert game.core.config["min_players"] == 4
+    assert game.core.config["impostor_count"] == 1
+    assert game.core.phase == "waiting"
     assert not game.core.started
     assert len(game.core.players) == 0
     assert len(game.core.impostors) == 0
 
     # Test custom config
-    custom_game = ImpostorGame({
-        'min_players': 6, 'impostor_count': 2, 'tasks_required': 5
-    })
-    assert custom_game.core.config['min_players'] == 6
-    assert custom_game.core.config['impostor_count'] == 2
+    custom_game = ImpostorGame(
+        {"min_players": 6, "impostor_count": 2, "tasks_required": 5}
+    )
+    assert custom_game.core.config["min_players"] == 6
+    assert custom_game.core.config["impostor_count"] == 2
 
 
 @pytest.mark.asyncio
@@ -95,8 +96,8 @@ async def test_player_management(game, users):
     for user in users[:4]:
         assert game.add_player(user.id, user.first_name)
         assert user.id in game.core.players
-        assert game.core.players[user.id]['name'] == user.first_name
-        assert game.core.players[user.id]['alive']
+        assert game.core.players[user.id]["name"] == user.first_name
+        assert game.core.players[user.id]["alive"]
 
     # Test double join prevention
     assert not game.add_player(users[0].id, users[0].first_name)
@@ -119,13 +120,13 @@ async def test_game_start_conditions(game, users):
     game.add_player(users[3].id, users[3].first_name)  # Now 4 players
     assert game.core.start_game()
     assert game.core.started
-    assert game.core.phase == 'task'
+    assert game.core.phase == "task"
     assert len(game.core.impostors) == 1
 
     # Test impostor assignment
     impostor_id = list(game.core.impostors)[0]
     assert impostor_id in game.core.players
-    assert game.core.players[impostor_id]['alive']
+    assert game.core.players[impostor_id]["alive"]
 
 
 @pytest.mark.asyncio
@@ -140,11 +141,12 @@ async def test_role_assignment(game, users):
     assert impostor_id in game.core.players
 
     # Test multiple impostors
-    game2 = ImpostorGame({'impostor_count': 2})
+    game2 = ImpostorGame({"impostor_count": 2})
     for user in users[:4]:
         game2.add_player(user.id, user.first_name)
     game2.core.assign_roles()
     assert len(game2.core.impostors) == 2
+
 
 # ============================================================================
 # VOTING SYSTEM TESTS
@@ -157,9 +159,9 @@ async def test_voting_mechanics(game, users, update_template):
     for user in users[:4]:
         game.add_player(user.id, user.first_name)
     game.core.start_game()
-    game.core.phase = 'voting'
+    game.core.phase = "voting"
     for uid in game.core.players:
-        game.core.players[uid]['alive'] = True
+        game.core.players[uid]["alive"] = True
 
     # Test valid vote - ensure the vote is properly registered
     update = update_template(users[0], "vote_2")
@@ -178,7 +180,7 @@ async def test_voting_mechanics(game, users, update_template):
     assert game.core.votes.get(users[2].id) is None
 
     # Test voting for dead player
-    game.core.players[3]['alive'] = False
+    game.core.players[3]["alive"] = False
     update = update_template(users[3], "vote_3")
     await game.handle_vote(update, AsyncMock())
     assert users[3].id not in game.core.votes
@@ -195,27 +197,27 @@ async def test_vote_resolution(game, users):
     game.core.votes = {1: 2, 2: 2, 3: 2, 4: 1}
     voted_out, msg = game.core.resolve_votes()
     assert voted_out == 2
-    assert not game.core.players[2]['alive']
-    assert 'ejected' in msg
+    assert not game.core.players[2]["alive"]
+    assert "ejected" in msg
 
     # Test tie vote
-    game.core.players[2]['alive'] = True  # Reset
+    game.core.players[2]["alive"] = True  # Reset
     game.core.votes = {1: 2, 2: 3, 3: 2, 4: 3}
     voted_out, msg = game.core.resolve_votes()
     assert voted_out is None
-    assert 'tie' in msg
+    assert "tie" in msg
 
     # Test no votes
     game.core.votes = {}
     voted_out, msg = game.core.resolve_votes()
     assert voted_out is None
-    assert 'No one was ejected' in msg
+    assert "No one was ejected" in msg
 
     # Test all skip votes
     game.core.votes = {1: None, 2: None, 3: None, 4: None}
     voted_out, msg = game.core.resolve_votes()
     assert voted_out is None
-    assert 'No one was ejected' in msg
+    assert "No one was ejected" in msg
 
 
 @pytest.mark.asyncio
@@ -229,28 +231,28 @@ async def test_game_over_conditions(game, users):
     game.core.impostors.clear()
     over, msg = game.core.check_game_over()
     assert over
-    assert 'win' in msg
+    assert "win" in msg
 
     # Test impostor win (impostors > crewmates)
     # Reset by adding impostors back and killing crewmates
     game.core.impostors = {1}  # Set player 1 as impostor
     # Ensure the impostor is alive
-    game.core.players[1]['alive'] = True
-    crewmate_ids = [
-        uid for uid in game.core.players if uid not in game.core.impostors]
+    game.core.players[1]["alive"] = True
+    crewmate_ids = [uid for uid in game.core.players if uid not in game.core.impostors]
     # Kill all crewmates to make impostors outnumber them
     for uid in crewmate_ids:
-        game.core.players[uid]['alive'] = False
+        game.core.players[uid]["alive"] = False
     over, msg = game.core.check_game_over()
     assert over
-    assert 'win' in msg
+    assert "win" in msg
 
     # Test game continues
-    game.core.players[crewmate_ids[0]]['alive'] = True
-    game.core.players[1]['alive'] = True
+    game.core.players[crewmate_ids[0]]["alive"] = True
+    game.core.players[1]["alive"] = True
     over, msg = game.core.check_game_over()
     assert not over
     assert msg == ""
+
 
 # ============================================================================
 # XP AND TITLE SYSTEM TESTS
@@ -278,18 +280,18 @@ async def test_xp_system(setup_db, game, users, update_template):
 @pytest.mark.asyncio
 async def test_title_progression():
     """Test title calculation for all XP levels"""
-    assert calculate_title(0) == 'Rookie'
-    assert calculate_title(29) == 'Rookie'
-    assert calculate_title(30) == 'Apprentice'
-    assert calculate_title(59) == 'Apprentice'
-    assert calculate_title(60) == 'Sleuth'
-    assert calculate_title(119) == 'Sleuth'
-    assert calculate_title(120) == 'Veteran'
-    assert calculate_title(199) == 'Veteran'
-    assert calculate_title(200) == 'Mastermind'
-    assert calculate_title(299) == 'Mastermind'
-    assert calculate_title(300) == 'Legend'
-    assert calculate_title(1000) == 'Legend'
+    assert calculate_title(0) == "Rookie"
+    assert calculate_title(29) == "Rookie"
+    assert calculate_title(30) == "Apprentice"
+    assert calculate_title(59) == "Apprentice"
+    assert calculate_title(60) == "Sleuth"
+    assert calculate_title(119) == "Sleuth"
+    assert calculate_title(120) == "Veteran"
+    assert calculate_title(199) == "Veteran"
+    assert calculate_title(200) == "Mastermind"
+    assert calculate_title(299) == "Mastermind"
+    assert calculate_title(300) == "Legend"
+    assert calculate_title(1000) == "Legend"
 
 
 @pytest.mark.asyncio
@@ -319,6 +321,7 @@ async def test_vote_xp_rewards(setup_db, game, users):
         assert player.xp > 50  # Should have gained XP
     db.close()
 
+
 # ============================================================================
 # TASK SYSTEM TESTS
 # ============================================================================
@@ -332,7 +335,7 @@ async def test_all_task_types():
         clue_tasks.quick_math_task,
         clue_tasks.word_unscramble_task,
         clue_tasks.trivia_task,
-        clue_tasks.pattern_recognition_task
+        clue_tasks.pattern_recognition_task,
     ]:
         task_type, puzzle, answer = task_func()
         assert isinstance(task_type, str)
@@ -346,11 +349,11 @@ async def test_all_task_types():
 @pytest.mark.asyncio
 async def test_ai_riddle_task():
     """Test AI riddle task generation"""
-    with patch('bot.utils.query_ai') as mock_ai:
+    with patch("bot.utils.query_ai") as mock_ai:
         mock_ai.return_value = "The one who speaks in riddles..."
         task_type, puzzle, answer = await clue_tasks.ai_riddle_task()
 
-        assert task_type == 'ai_riddle'
+        assert task_type == "ai_riddle"
         assert isinstance(puzzle, str)
         assert answer == "Think carefully who doesn't fit in..."
 
@@ -369,6 +372,7 @@ async def test_random_task_selection():
 
     # Should have variety in task types
     assert len(tasks) > 1
+
 
 # ============================================================================
 # DATABASE OPERATIONS TESTS
@@ -403,19 +407,19 @@ async def test_database_persistence(setup_db, game, users, update_template):
         assert player.xp > 0
         assert player.tasks_done > 0 or player.fake_tasks_done > 0
         assert player.title in [
-            'Rookie',
-            'Apprentice',
-            'Sleuth',
-            'Veteran',
-            'Mastermind',
-            'Legend']
+            "Rookie",
+            "Apprentice",
+            "Sleuth",
+            "Veteran",
+            "Mastermind",
+            "Legend",
+        ]
 
     db.close()
 
 
 @pytest.mark.asyncio
-async def test_leaderboard_functionality(
-        setup_db, game, users, update_template):
+async def test_leaderboard_functionality(setup_db, game, users, update_template):
     """Test leaderboard generation and ordering"""
     # Clean up database first
     db = SessionLocal()
@@ -450,6 +454,7 @@ async def test_leaderboard_functionality(
     assert top_players[3].xp == 50
     db.close()
 
+
 # ============================================================================
 # UI AND BUTTON TESTS
 # ============================================================================
@@ -464,8 +469,10 @@ async def test_all_button_menus():
     assert len(main_markup.inline_keyboard) > 0
 
     # Test voting menu
-    alive_players = {1: {'name': 'Alice', 'alive': True},
-                     2: {'name': 'Bob', 'alive': True}}
+    alive_players = {
+        1: {"name": "Alice", "alive": True},
+        2: {"name": "Bob", "alive": True},
+    }
     voting_markup = voting_menu(alive_players)
     assert voting_markup is not None
     assert len(voting_markup.inline_keyboard) == 3  # 2 players + skip vote
@@ -522,6 +529,7 @@ async def test_all_button_callbacks(game, users, update_template):
     update = update_template(users[0], "cancel_end_game")
     await game.handle_cancel_end_game(update, AsyncMock())
 
+
 # ============================================================================
 # PHASE MANAGEMENT TESTS
 # ============================================================================
@@ -536,16 +544,16 @@ async def test_phase_transitions(game, users, context):
     game.core.start_game()
 
     # Test task phase
-    assert game.core.phase == 'task'
+    assert game.core.phase == "task"
 
     # Test discussion phase
     await game.phases.start_discussion_phase(context)
-    assert game.core.phase == 'discussion'
+    assert game.core.phase == "discussion"
     assert len(game.core.discussion_history) == 0
 
     # Test voting phase
     await game.phases.start_voting_phase(context)
-    assert game.core.phase == 'voting'
+    assert game.core.phase == "voting"
     assert len(game.core.votes) == 0
 
 
@@ -555,13 +563,13 @@ async def test_discussion_history(game, users, update_template):
     for user in users[:4]:
         game.add_player(user.id, user.first_name)
     game.core.start_game()
-    game.core.phase = 'discussion'
+    game.core.phase = "discussion"
 
     # Simulate discussion messages
     messages = [
         "I think Bob is suspicious",
         "No way, Alice is the impostor!",
-        "Let's vote for Charlie"
+        "Let's vote for Charlie",
     ]
 
     for i, message in enumerate(messages):
@@ -570,10 +578,9 @@ async def test_discussion_history(game, users, update_template):
         await game.handle_discussion(update, AsyncMock())
 
     assert len(game.core.discussion_history) == 3
-    assert ("Alice: I think Bob is suspicious"
-            in game.core.discussion_history[0])
-    assert ("Bob: No way, Alice is the impostor!"
-            in game.core.discussion_history[1])
+    assert "Alice: I think Bob is suspicious" in game.core.discussion_history[0]
+    assert "Bob: No way, Alice is the impostor!" in game.core.discussion_history[1]
+
 
 # ============================================================================
 # ERROR HANDLING AND EDGE CASES
@@ -596,7 +603,7 @@ async def test_error_conditions(game, users, update_template):
     # Should not raise exception
 
     # Test database connection errors
-    with patch('bot.database.SessionLocal') as mock_session:
+    with patch("bot.database.SessionLocal") as mock_session:
         mock_session.side_effect = Exception("Database error")
         update = update_template(users[0], "show_profile")
         await game.show_profile(update)
@@ -627,7 +634,7 @@ async def test_game_reset_functionality(game, users, update_template):
     for user in users[:4]:
         game.add_player(user.id, user.first_name)
     game.core.start_game()
-    game.core.phase = 'voting'
+    game.core.phase = "voting"
     game.core.votes = {1: 2}
 
     # Test reset
@@ -638,8 +645,9 @@ async def test_game_reset_functionality(game, users, update_template):
     assert len(game.core.players) == 0
     assert len(game.core.impostors) == 0
     assert not game.core.started
-    assert game.core.phase == 'waiting'
+    assert game.core.phase == "waiting"
     assert len(game.core.votes) == 0
+
 
 # ============================================================================
 # INTEGRATION TESTS
@@ -736,6 +744,7 @@ async def test_multiple_game_sessions(setup_db, game, users, update_template):
     assert len(all_players) == 6  # All players from both games
     db.close()
 
+
 # ============================================================================
 # PERFORMANCE AND STRESS TESTS
 # ============================================================================
@@ -745,12 +754,7 @@ async def test_multiple_game_sessions(setup_db, game, users, update_template):
 async def test_large_game_session(setup_db, game, update_template):
     """Test game with many players"""
     # Create many players
-    many_users = [
-        SimpleNamespace(
-            id=i,
-            first_name=f'Player{i}') for i in range(
-            1,
-            21)]
+    many_users = [SimpleNamespace(id=i, first_name=f"Player{i}") for i in range(1, 21)]
 
     # Add all players
     for user in many_users:
@@ -798,6 +802,7 @@ async def test_rapid_operations(setup_db, game, users, update_template):
             elif button == "show_rules":
                 await game.show_rules(update)
 
+
 # ============================================================================
 # SECURITY AND VALIDATION TESTS
 # ============================================================================
@@ -807,18 +812,19 @@ async def test_rapid_operations(setup_db, game, users, update_template):
 async def test_input_validation(game, update_template):
     """Test input validation and security"""
     # Test invalid user IDs
-    invalid_user = SimpleNamespace(id=-1, first_name='Invalid')
+    invalid_user = SimpleNamespace(id=-1, first_name="Invalid")
     update = update_template(invalid_user, "join_game")
     await game.handle_join_game(update, AsyncMock())
 
     # Test very long names
-    long_name_user = SimpleNamespace(id=999, first_name='A' * 1000)
+    long_name_user = SimpleNamespace(id=999, first_name="A" * 1000)
     update = update_template(long_name_user, "join_game")
     await game.handle_join_game(update, AsyncMock())
 
     # Test special characters in names
     special_user = SimpleNamespace(
-        id=998, first_name='Test<script>alert("xss")</script>')
+        id=998, first_name='Test<script>alert("xss")</script>'
+    )
     update = update_template(special_user, "join_game")
     await game.handle_join_game(update, AsyncMock())
 
@@ -829,9 +835,9 @@ async def test_vote_manipulation_prevention(game, users, update_template):
     for user in users[:4]:
         game.add_player(user.id, user.first_name)
     game.core.start_game()
-    game.core.phase = 'voting'
+    game.core.phase = "voting"
     for uid in game.core.players:
-        game.core.players[uid]['alive'] = True
+        game.core.players[uid]["alive"] = True
 
     # Test voting multiple times (votes can be overwritten, which is correct
     # behavior)
@@ -844,6 +850,7 @@ async def test_vote_manipulation_prevention(game, users, update_template):
     await game.handle_vote(update, AsyncMock())
     # Vote should be overwritten (this is correct behavior)
     assert game.core.votes.get(users[0].id) == 3
+
 
 # ============================================================================
 # AI INTEGRATION TESTS
@@ -858,7 +865,7 @@ async def test_ai_clue_generation(game, users, context):
     game.core.start_game()
 
     # Test AI clue generation
-    with patch('bot.impostor.ai_clues.query_ai') as mock_ai:
+    with patch("bot.impostor.ai_clues.query_ai") as mock_ai:
         mock_ai.return_value = "The one who walks in shadows..."
         await game.ai_clues.send_private_ai_clues(context)
 
@@ -871,10 +878,11 @@ async def test_ai_fallback_handling(game, users, context):
     game.core.start_game()
 
     # Test AI failure handling
-    with patch('bot.impostor.ai_clues.query_ai') as mock_ai:
+    with patch("bot.impostor.ai_clues.query_ai") as mock_ai:
         mock_ai.side_effect = Exception("API Error")
         await game.ai_clues.send_private_ai_clues(context)
         # Should not crash
+
 
 # ============================================================================
 # CONFIGURATION TESTS
@@ -885,25 +893,24 @@ async def test_ai_fallback_handling(game, users, context):
 async def test_custom_configurations():
     """Test various game configurations"""
     configs = [
-        {'min_players': 3, 'impostor_count': 1},
-        {'min_players': 6, 'impostor_count': 2},
-        {'min_players': 8, 'impostor_count': 3},
-        {'min_players': 4, 'impostor_count': 1, 'tasks_required': 5},
-        {'min_players': 4, 'impostor_count': 1, 'anonymous_voting': False},
+        {"min_players": 3, "impostor_count": 1},
+        {"min_players": 6, "impostor_count": 2},
+        {"min_players": 8, "impostor_count": 3},
+        {"min_players": 4, "impostor_count": 1, "tasks_required": 5},
+        {"min_players": 4, "impostor_count": 1, "anonymous_voting": False},
     ]
 
     for config in configs:
         game = ImpostorGame(config)
-        assert game.core.config['min_players'] == config['min_players']
-        assert game.core.config['impostor_count'] == config['impostor_count']
+        assert game.core.config["min_players"] == config["min_players"]
+        assert game.core.config["impostor_count"] == config["impostor_count"]
 
-        if 'tasks_required' in config:
-            assert (game.core.config['tasks_required']
-                    == config['tasks_required'])
+        if "tasks_required" in config:
+            assert game.core.config["tasks_required"] == config["tasks_required"]
 
-        if 'anonymous_voting' in config:
-            assert (game.core.config['anonymous_voting']
-                    == config['anonymous_voting'])
+        if "anonymous_voting" in config:
+            assert game.core.config["anonymous_voting"] == config["anonymous_voting"]
+
 
 # ============================================================================
 # MEMORY AND RESOURCE TESTS
@@ -934,8 +941,7 @@ async def test_memory_cleanup(game, users, update_template):
 
 
 @pytest.mark.asyncio
-async def test_database_connection_management(
-        setup_db, game, users, update_template):
+async def test_database_connection_management(setup_db, game, users, update_template):
     """Test database connection management"""
     db = SessionLocal()
     db.query(Player).delete()
@@ -950,6 +956,7 @@ async def test_database_connection_management(
     db.close()
     update = update_template(users[0], "show_profile")
     await game.show_profile(update)
+
 
 # ===================== NEGATIVE/INVALID INPUT TESTS =========================
 
@@ -970,7 +977,7 @@ async def test_invalid_callback_data(users, update_template):
 async def test_invalid_user_ids(update_template):
     game = ImpostorGame()
     # Only test with None ID, skip string ID that causes database error
-    invalid_users = [SimpleNamespace(id=None, first_name='None')]
+    invalid_users = [SimpleNamespace(id=None, first_name="None")]
     for user in invalid_users:
         update = update_template(user, "join_game")
         try:
@@ -983,9 +990,8 @@ async def test_invalid_user_ids(update_template):
 @pytest.mark.asyncio
 async def test_xss_and_sql_injection_names(update_template):
     game = ImpostorGame()
-    xss_user = SimpleNamespace(id=100, first_name='<script>alert(1)</script>')
-    sql_user = SimpleNamespace(
-        id=101, first_name="Robert'); DROP TABLE Players;--")
+    xss_user = SimpleNamespace(id=100, first_name="<script>alert(1)</script>")
+    sql_user = SimpleNamespace(id=101, first_name="Robert'); DROP TABLE Players;--")
     for user in [xss_user, sql_user]:
         update = update_template(user, "join_game")
         try:
@@ -993,18 +999,20 @@ async def test_xss_and_sql_injection_names(update_template):
         except Exception:
             pytest.fail("Should not raise")
 
+
 # ===================== DATABASE FAILURE TESTS ===============================
 
 
 @pytest.mark.asyncio
 async def test_db_failure_on_profile(users, update_template):
     game = ImpostorGame()
-    with patch('bot.database.SessionLocal', side_effect=Exception("DB Down")):
+    with patch("bot.database.SessionLocal", side_effect=Exception("DB Down")):
         update = update_template(users[0], "show_profile")
         try:
             await game.show_profile(update)
         except Exception:
             pytest.fail("Should not raise")
+
 
 # ===================== AI FAILURE TESTS =====================================
 
@@ -1016,11 +1024,12 @@ async def test_ai_timeout(users):
     for user in users[:4]:
         game.add_player(user.id, user.first_name)
     game.core.start_game()
-    with patch('bot.impostor.ai_clues.query_ai', side_effect=TimeoutError):
+    with patch("bot.impostor.ai_clues.query_ai", side_effect=TimeoutError):
         try:
             await game.ai_clues.send_private_ai_clues(context)
         except Exception:
             pytest.fail("Should not raise")
+
 
 # ===================== PHASE TRANSITION EDGE CASES ==========================
 
@@ -1042,6 +1051,7 @@ async def test_invalid_phase_transitions(users):
     except Exception:
         pytest.fail("Should not raise")
 
+
 # ===================== VOTING EDGE CASES ====================================
 
 
@@ -1051,11 +1061,11 @@ async def test_all_skip_votes(users):
     for user in users[:4]:
         game.add_player(user.id, user.first_name)
     game.core.start_game()
-    game.core.phase = 'voting'
+    game.core.phase = "voting"
     game.core.votes = {u.id: None for u in users[:4]}
     voted_out, msg = game.core.resolve_votes()
     assert voted_out is None
-    assert 'No one was ejected' in msg
+    assert "No one was ejected" in msg
 
 
 @pytest.mark.asyncio
@@ -1063,12 +1073,13 @@ async def test_all_dead_voting(users):
     game = ImpostorGame()
     for user in users[:4]:
         game.add_player(user.id, user.first_name)
-        game.core.players[user.id]['alive'] = False
-    game.core.phase = 'voting'
+        game.core.players[user.id]["alive"] = False
+    game.core.phase = "voting"
     game.core.votes = {u.id: u.id for u in users[:4]}
     voted_out, msg = game.core.resolve_votes()
     assert voted_out is None
-    assert 'No one was ejected' in msg
+    assert "No one was ejected" in msg
+
 
 # ===================== CONCURRENCY TESTS ====================================
 
@@ -1087,11 +1098,13 @@ async def test_parallel_games(users, update_template):
         assert len(game.core.players) == 4
         assert game.core.started
 
+
 # ===================== RESOURCE LEAK TESTS (MEMORY) =========================
 
 
 def test_many_game_instances():
     import gc
+
     games = [ImpostorGame() for _ in range(100)]
     for g in games:
         g.core.players = {}
@@ -1099,6 +1112,7 @@ def test_many_game_instances():
     gc.collect()
     # If there were leaks, this would OOM or error
     assert True
+
 
 # ===================== UI/UX BUTTON EDGE TESTS ==============================
 
@@ -1124,7 +1138,8 @@ async def test_all_button_callbacks_robust(users, update_template):
         "vote_skip",
         "invalid_callback",
         "",
-        None]
+        None,
+    ]
     for cb in callbacks:
         update = update_template(users[0], cb)
         try:
@@ -1134,6 +1149,7 @@ async def test_all_button_callbacks_robust(users, update_template):
         except Exception:
             pytest.fail("Should not raise")
 
+
 # ===================== LEADERBOARD PAGINATION EDGE TEST =====================
 
 
@@ -1142,7 +1158,7 @@ async def test_leaderboard_pagination(users, update_template):
     game = ImpostorGame()
     # Add 30 players
     for i in range(30):
-        user = SimpleNamespace(id=1000 + i, first_name=f'Player{i}')
+        user = SimpleNamespace(id=1000 + i, first_name=f"Player{i}")
         update = update_template(user, "join_game")
         await game.handle_join_game(update, AsyncMock())
     update = update_template(users[0], "show_leaderboard")
@@ -1150,6 +1166,7 @@ async def test_leaderboard_pagination(users, update_template):
         await game.show_leaderboard(update)
     except Exception:
         pytest.fail("Should not raise")
+
 
 # ===================== TASK ANSWER EDGE CASES ===============================
 

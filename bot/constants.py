@@ -9,7 +9,8 @@ HELP_TEXT = (
     "/startgame - Start a new Impostor Game\n"
     "/help - Show this help message\n"
     "/status - Show current game status\n"
-    "/reset - Reset the game in this group\n")
+    "/reset - Reset the game in this group\n"
+)
 
 ABOUT_TEXT = (
     "<b>About Guess-Game-Bot</b>\n\n"
@@ -17,6 +18,4 @@ ABOUT_TEXT = (
     "Created for group play and powered by HuggingFace AI.\n"
 )
 
-ERROR_DM = (
-    "⚠️ Please start a private chat with the bot and press Start before joining the game."
-)
+ERROR_DM = "⚠️ Please start a private chat with the bot and press Start before joining the game."

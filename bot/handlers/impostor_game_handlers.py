@@ -12,9 +12,7 @@ def get_game(chat_id):
     return impostor_games[chat_id]
 
 
-async def join_impostor_handler(
-        update: Update,
-        context: ContextTypes.DEFAULT_TYPE):
+async def join_impostor_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handler for joining the Impostor Game."""
     chat_id = update.effective_chat.id
     game = get_game(chat_id)
@@ -22,17 +20,15 @@ async def join_impostor_handler(
 
 
 async def start_impostor_game_handler(
-        update: Update,
-        context: ContextTypes.DEFAULT_TYPE):
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+):
     """Handler for starting the Impostor Game."""
     chat_id = update.effective_chat.id
     game = get_game(chat_id)
     await game.start_impostor_game(update, context)
 
 
-async def discussion_handler(
-        update: Update,
-        context: ContextTypes.DEFAULT_TYPE):
+async def discussion_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handler for group discussion messages during the discussion phase."""
     chat_id = update.effective_chat.id
     game = get_game(chat_id)
@@ -59,9 +55,7 @@ async def profile_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await game.show_profile(update)
 
 
-async def reset_game_handler(
-        update: Update,
-        context: ContextTypes.DEFAULT_TYPE):
+async def reset_game_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handler to reset the game in a group chat."""
     chat_id = update.effective_chat.id
     if chat_id in impostor_games:
@@ -71,9 +65,7 @@ async def reset_game_handler(
         await update.message.reply_text("No game to reset.")
 
 
-async def leaderboard_handler(
-        update: Update,
-        context: ContextTypes.DEFAULT_TYPE):
+async def leaderboard_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     game = get_game(chat_id)
     await game.show_leaderboard(update)

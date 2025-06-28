@@ -1,8 +1,12 @@
 import os
 from telegram import Update, ParseMode
 from telegram.ext import (
-    ApplicationBuilder, CommandHandler, CallbackQueryHandler,
-    MessageHandler, ContextTypes, filters
+    ApplicationBuilder,
+    CommandHandler,
+    CallbackQueryHandler,
+    MessageHandler,
+    ContextTypes,
+    filters,
 )
 from bot.ui.buttons import main_menu
 from bot.database import init_db
@@ -23,14 +27,13 @@ def get_game_manager(chat_id):
 
 
 async def startgame(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    msg = update.message or (
-        update.callback_query and update.callback_query.message)
+    msg = update.message or (update.callback_query and update.callback_query.message)
     if not msg:
         return
     await msg.reply_text(
         "🎮 <b>Welcome! Use the menu below to play:</b>",
         reply_markup=main_menu(),
-        parse_mode=ParseMode.HTML
+        parse_mode=ParseMode.HTML,
     )
 
 
@@ -66,7 +69,9 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.message.reply_text("🎮 Main Menu:", reply_markup=main_menu())
         elif data == "restart_game":
             await game_manager.reset(update)
-            await query.message.reply_text("Game reset. 🎮 Main Menu:", reply_markup=main_menu())
+            await query.message.reply_text(
+                "Game reset. 🎮 Main Menu:", reply_markup=main_menu()
+            )
         elif data.startswith("vote_") or data == "vote_skip":
             await game_manager.handle_vote(update, context)
         elif data == "show_rules":
@@ -77,14 +82,13 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         print(f"[button_click] Exception: {e}")
         msg = update.message or (
-            update.callback_query and update.callback_query.message)
+            update.callback_query and update.callback_query.message
+        )
         if msg:
             await msg.reply_text(f"❌ An error occurred: {e}")
 
 
-async def handle_discussion(
-        update: Update,
-        context: ContextTypes.DEFAULT_TYPE):
+async def handle_discussion(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     game_manager = get_game_manager(chat_id)
     await game_manager.handle_discussion(update, context)
@@ -110,9 +114,8 @@ def main():
     app.add_handler(CommandHandler("about", about_command))
     app.add_handler(CallbackQueryHandler(button_click))
     app.add_handler(
-        MessageHandler(
-            filters.TEXT & filters.ChatType.GROUPS,
-            handle_discussion))
+        MessageHandler(filters.TEXT & filters.ChatType.GROUPS, handle_discussion)
+    )
 
     print("🤖 Smart Game Bot Running...")
     app.run_polling()

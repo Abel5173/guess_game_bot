@@ -6,10 +6,12 @@ from bot.utils import query_ai
 async def ai_riddle_task(player_names, discussion_history=None):
     prompt = (
         f"In a group game with players: {
-            ', '.join(player_names)}.\n" "One player is secretly an impostor.\n"
+            ', '.join(player_names)}.\n"
+        "One player is secretly an impostor.\n"
         "Create a mysterious riddle or cryptic clue hinting at the impostor without naming them.\n"
         "Use metaphors or riddles only.\n"
-        "Return the riddle and the 'answer' (the real player role or a hint).")
+        "Return the riddle and the 'answer' (the real player role or a hint)."
+    )
     riddle = await query_ai(prompt)
     answer = "Think carefully who doesn't fit in..."
     return "ai_riddle", riddle, answer

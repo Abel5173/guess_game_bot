@@ -4,4 +4,4 @@ from bot.constants import HELP_TEXT
 
 
 async def help_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(HELP_TEXT, parse_mode='HTML')
+    await update.message.reply_text(HELP_TEXT, parse_mode="HTML")

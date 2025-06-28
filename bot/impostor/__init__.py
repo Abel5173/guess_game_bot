@@ -39,37 +39,44 @@ class ImpostorGame:
     async def join_impostor(self, update, context):
         user = update.effective_user
         msg = update.message or (
-            update.callback_query and update.callback_query.message)
+            update.callback_query and update.callback_query.message
+        )
         if self.add_player(user.id, user.first_name):
             if msg:
                 await msg.reply_text(f"✅ {user.first_name} joined the game.")
         else:
             if msg:
-                await msg.reply_text("⚠️ You are already in the game or the game has started.")
+                await msg.reply_text(
+                    "⚠️ You are already in the game or the game has started."
+                )
 
     async def start_impostor_game(self, update, context):
         self.core.group_chat_id = update.effective_chat.id
         msg = update.message or (
-            update.callback_query and update.callback_query.message)
+            update.callback_query and update.callback_query.message
+        )
         if not self.core.start_game():
             if msg:
                 await msg.reply_text("❗ Need at least 4 players to start.")
             return
         for uid, name in self.core.players.items():
             try:
-                await context.bot.send_message(uid, "🎭 You are a player in the game.", parse_mode='HTML')
+                await context.bot.send_message(
+                    uid, "🎭 You are a player in the game.", parse_mode="HTML"
+                )
             except Exception:
                 pass
         await self.phases.start_task_phase(context)
 
     async def handle_discussion(self, update, context):
-        if self.core.phase != 'discussion':
+        if self.core.phase != "discussion":
             return
         user = update.effective_user
         text = update.message.text.strip()
         if user.id in self.core.players:
             self.core.discussion_history.append(
-                f"{self.core.players[user.id]['name']}: {text}")
+                f"{self.core.players[user.id]['name']}: {text}"
+            )
 
     async def handle_vote(self, update, context):
         await self.voting.handle_vote(update, context)
@@ -85,7 +92,8 @@ class ImpostorGame:
 
     async def show_main_menu(self, update: Update):
         msg = update.message or (
-            update.callback_query and update.callback_query.message)
+            update.callback_query and update.callback_query.message
+        )
         await msg.reply_text("🎮 Choose an action:", reply_markup=main_menu())
 
     async def handle_join_game(self, update, context):
@@ -94,7 +102,9 @@ class ImpostorGame:
         if self.add_player(user.id, user.first_name):
             await msg.reply_text(f"✅ {user.first_name} joined the game.")
         else:
-            await msg.reply_text("⚠️ You are already in the game or the game has started.")
+            await msg.reply_text(
+                "⚠️ You are already in the game or the game has started."
+            )
         await self.show_main_menu(update)
 
     async def handle_complete_task(self, update, context):
@@ -121,39 +131,44 @@ class ImpostorGame:
         await self.show_main_menu(update)
 
     async def handle_start_voting(self, update, context):
-        self.core.phase = 'voting'
+        self.core.phase = "voting"
         alive_players = self.core.get_alive_players()
         await update.callback_query.message.reply_text(
             "🗳️ Voting Phase — Vote who to eject!",
-            reply_markup=voting_menu(alive_players)
+            reply_markup=voting_menu(alive_players),
         )
 
     async def handle_start_discussion(self, update, context):
-        self.core.phase = 'discussion'
+        self.core.phase = "discussion"
         await update.callback_query.message.reply_text(
             "🗣️ Discussion Phase started! Discuss who the impostor might be.",
-            reply_markup=main_menu()
+            reply_markup=main_menu(),
         )
 
     async def handle_end_game(self, update, context):
         await update.callback_query.message.reply_text(
-            "Are you sure you want to end the game?",
-            reply_markup=confirm_end_game()
+            "Are you sure you want to end the game?", reply_markup=confirm_end_game()
         )
 
     async def handle_confirm_end_game(self, update, context):
         await self.reset()
-        await update.callback_query.message.reply_text("Game ended. Thanks for playing! 🎉", reply_markup=main_menu())
+        await update.callback_query.message.reply_text(
+            "Game ended. Thanks for playing! 🎉", reply_markup=main_menu()
+        )
 
     async def handle_cancel_end_game(self, update, context):
-        await update.callback_query.message.reply_text("End game cancelled.", reply_markup=main_menu())
+        await update.callback_query.message.reply_text(
+            "End game cancelled.", reply_markup=main_menu()
+        )
 
     async def show_profile(self, update):
         user = update.effective_user
         db = SessionLocal()
         player = db.query(Player).filter(Player.id == user.id).first()
         if not player:
-            await update.callback_query.message.reply_text("❌ You have not joined the game yet.")
+            await update.callback_query.message.reply_text(
+                "❌ You have not joined the game yet."
+            )
             db.close()
             return
         msg = (
@@ -169,13 +184,14 @@ class ImpostorGame:
 
     async def show_leaderboard(self, update):
         db = SessionLocal()
-        top_players = db.query(Player).order_by(
-            Player.xp.desc()).limit(10).all()
+        top_players = db.query(Player).order_by(Player.xp.desc()).limit(10).all()
         lines = ["🏆 <b>Leaderboard</b> — Top Players"]
         for i, p in enumerate(top_players, start=1):
             lines.append(f"{i}. {p.name} — {p.xp} XP ({p.title})")
         db.close()
-        await update.callback_query.message.reply_text("\n".join(lines), parse_mode=ParseMode.HTML)
+        await update.callback_query.message.reply_text(
+            "\n".join(lines), parse_mode=ParseMode.HTML
+        )
         await self.show_main_menu(update)
 
     async def celebrate_win(self, update, winning_team):
@@ -189,31 +205,44 @@ class ImpostorGame:
     async def reset(self, update=None):
         self.core.reset()
         if update:
-            await update.callback_query.message.reply_text("🔄 Game has been reset.", reply_markup=main_menu())
+            await update.callback_query.message.reply_text(
+                "🔄 Game has been reset.", reply_markup=main_menu()
+            )
 
     async def task_command(self, update, context):
         user = update.effective_user
         chat_id = update.effective_chat.id
         db = SessionLocal()
         # Only allow one pending task per user
-        existing = db.query(Task).filter(
-            Task.user_id == user.id,
-            Task.chat_id == chat_id,
-            Task.status == "pending").first()
+        existing = (
+            db.query(Task)
+            .filter(
+                Task.user_id == user.id,
+                Task.chat_id == chat_id,
+                Task.status == "pending",
+            )
+            .first()
+        )
         if existing:
-            await update.message.reply_text("❗ You already have a pending task. Use /answer to answer it.")
+            await update.message.reply_text(
+                "❗ You already have a pending task. Use /answer to answer it."
+            )
             db.close()
             return
         player_names = list(self.core.players.values())
-        discussion = "\n".join(
-            self.core.discussion_history) if self.core.discussion_history else None
+        discussion = (
+            "\n".join(self.core.discussion_history)
+            if self.core.discussion_history
+            else None
+        )
         task_type, puzzle, answer = await get_random_task(player_names, discussion)
         task = Task(
             user_id=user.id,
             chat_id=chat_id,
             task_type=task_type,
             puzzle=puzzle,
-            answer=answer.lower())
+            answer=answer.lower(),
+        )
         db.add(task)
         db.commit()
         db.close()
@@ -225,16 +254,25 @@ class ImpostorGame:
         user = update.effective_user
         chat_id = update.effective_chat.id
         db = SessionLocal()
-        task = db.query(Task).filter(
-            Task.user_id == user.id,
-            Task.chat_id == chat_id,
-            Task.status == "pending").first()
+        task = (
+            db.query(Task)
+            .filter(
+                Task.user_id == user.id,
+                Task.chat_id == chat_id,
+                Task.status == "pending",
+            )
+            .first()
+        )
         if not task:
-            await update.message.reply_text("❌ You don't have any active task. Use /task to get one.")
+            await update.message.reply_text(
+                "❌ You don't have any active task. Use /task to get one."
+            )
             db.close()
             return
         if not context.args:
-            await update.message.reply_text("❗ Please provide an answer after the command.")
+            await update.message.reply_text(
+                "❗ Please provide an answer after the command."
+            )
             db.close()
             return
         user_answer = " ".join(context.args).lower()
@@ -248,37 +286,50 @@ class ImpostorGame:
             task.status = "failed"
             db.commit()
             db.close()
-            await update.message.reply_text("❌ Incorrect answer. Try again or use /task for a new one.")
+            await update.message.reply_text(
+                "❌ Incorrect answer. Try again or use /task for a new one."
+            )
 
     async def taskstats_command(self, update, context):
         user = update.effective_user
         chat_id = update.effective_chat.id
         db = SessionLocal()
-        total = db.query(Task).filter(
-            Task.user_id == user.id,
-            Task.chat_id == chat_id).count()
-        completed = db.query(Task).filter(
-            Task.user_id == user.id,
-            Task.chat_id == chat_id,
-            Task.status == "completed").count()
-        failed = db.query(Task).filter(
-            Task.user_id == user.id,
-            Task.chat_id == chat_id,
-            Task.status == "failed").count()
-        by_type = db.query(
-            Task.task_type,
-            Task.status,
-            func.count()).filter(
-            Task.user_id == user.id,
-            Task.chat_id == chat_id).group_by(
-            Task.task_type,
-            Task.status).all()
+        total = (
+            db.query(Task)
+            .filter(Task.user_id == user.id, Task.chat_id == chat_id)
+            .count()
+        )
+        completed = (
+            db.query(Task)
+            .filter(
+                Task.user_id == user.id,
+                Task.chat_id == chat_id,
+                Task.status == "completed",
+            )
+            .count()
+        )
+        failed = (
+            db.query(Task)
+            .filter(
+                Task.user_id == user.id,
+                Task.chat_id == chat_id,
+                Task.status == "failed",
+            )
+            .count()
+        )
+        by_type = (
+            db.query(Task.task_type, Task.status, func.count())
+            .filter(Task.user_id == user.id, Task.chat_id == chat_id)
+            .group_by(Task.task_type, Task.status)
+            .all()
+        )
         db.close()
         lines = [
             f"📊 <b>Task Stats</b> for {user.first_name}",
             f"Total: {total}",
             f"✅ Completed: {completed}",
-            f"❌ Failed: {failed}"]
+            f"❌ Failed: {failed}",
+        ]
         for ttype, status, count in by_type:
             lines.append(f"{ttype} ({status}): {count}")
         await update.message.reply_text("\n".join(lines), parse_mode=ParseMode.HTML)
@@ -298,6 +349,7 @@ class ImpostorGame:
             "- Use the buttons for all actions—no typing needed!\n"
             "- Check your profile and leaderboard for stats and titles.\n"
             "- Have fun, play fair, and enjoy the mystery!\n\n"
-            "<i>Ready to play? Use the menu below to get started!</i>")
+            "<i>Ready to play? Use the menu below to get started!</i>"
+        )
         await update.callback_query.message.reply_text(rules, parse_mode=ParseMode.HTML)
         await self.show_main_menu(update)
