@@ -273,6 +273,7 @@ async def test_xp_system(setup_db, game, users, update_template):
     # Verify XP was awarded
     db = SessionLocal()
     player = db.query(Player).filter(Player.id == users[0].id).first()
+    assert player is not None
     assert player.xp > 0
     db.close()
 
@@ -305,6 +306,7 @@ async def test_vote_xp_rewards(setup_db, game, users):
     db = SessionLocal()
     for user in users[:4]:
         player = db.query(Player).filter(Player.id == user.id).first()
+        assert player is not None
         player.xp = 50
         db.commit()
     db.close()
@@ -318,6 +320,7 @@ async def test_vote_xp_rewards(setup_db, game, users):
     db = SessionLocal()
     for voter_id in [1, 2, 3]:
         player = db.query(Player).filter(Player.id == voter_id).first()
+        assert player is not None
         assert player.xp > 50  # Should have gained XP
     db.close()
 
@@ -351,7 +354,7 @@ async def test_ai_riddle_task():
     """Test AI riddle task generation"""
     with patch("bot.utils.query_ai") as mock_ai:
         mock_ai.return_value = "The one who speaks in riddles..."
-        task_type, puzzle, answer = await clue_tasks.ai_riddle_task()
+        task_type, puzzle, answer = await clue_tasks.ai_riddle_task(["Alice", "Bob", "Charlie"])
 
         assert task_type == "ai_riddle"
         assert isinstance(puzzle, str)
@@ -364,7 +367,7 @@ async def test_random_task_selection():
     # Test multiple calls to ensure randomness
     tasks = set()
     for _ in range(10):
-        task_type, puzzle, answer = await clue_tasks.get_random_task()
+        task_type, puzzle, answer = await clue_tasks.get_random_task(["Alice", "Bob", "Charlie"])
         tasks.add(task_type)
         assert isinstance(task_type, str)
         assert isinstance(puzzle, str)
@@ -436,6 +439,7 @@ async def test_leaderboard_functionality(setup_db, game, users, update_template)
         # Manually set XP
         db = SessionLocal()
         player = db.query(Player).filter(Player.id == user.id).first()
+        assert player is not None
         player.xp = xp_levels[i]
         db.commit()
         db.close()

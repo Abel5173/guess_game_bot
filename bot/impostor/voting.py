@@ -1,5 +1,6 @@
 from telegram.ext import ContextTypes
 from telegram import ParseMode
+from typing import Dict, Optional, Tuple, Any
 
 
 class VotingManager:
@@ -7,7 +8,7 @@ class VotingManager:
     Handles voting logic, anonymous voting, and vote resolution for the Impostor Game.
     """
 
-    def __init__(self, core):
+    def __init__(self, core: Any) -> None:
         self.core = core
 
     def vote(self, voter_id: int, target_id: int) -> bool:
@@ -20,8 +21,8 @@ class VotingManager:
             return True
         return False
 
-    def resolve_votes(self):
-        counts = {}
+    def resolve_votes(self) -> Tuple[Optional[int], str]:
+        counts: Dict[int, int] = {}
         for target in self.core.votes.values():
             if target is not None:
                 counts[target] = counts.get(target, 0) + 1
@@ -40,7 +41,7 @@ class VotingManager:
             self.core.players[voted_out]['name']} was ejected!",
         )
 
-    async def handle_vote(self, update, context: ContextTypes.DEFAULT_TYPE):
+    async def handle_vote(self, update: Any, context: ContextTypes.DEFAULT_TYPE) -> None:
         query = update.callback_query
         await query.answer()
         user_id = query.from_user.id
@@ -73,7 +74,7 @@ class VotingManager:
             # Optionally, signal to resolve votes immediately here
             pass
 
-    async def start_voting(self, context: ContextTypes.DEFAULT_TYPE):
+    async def start_voting(self, context: ContextTypes.DEFAULT_TYPE) -> None:
         markup = self.core.get_voting_markup()
         await context.bot.send_message(
             self.core.group_chat_id,

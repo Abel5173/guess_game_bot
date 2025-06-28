@@ -1,11 +1,12 @@
 # Future in-game events (sabotage, rewards, etc.) will go here.
 
+from typing import Dict, Set, Any
 from bot.database import SessionLocal
 from bot.database.models import Player
 from bot.impostor.utils import calculate_title
 
 
-def award_xp(user_id, amount, reason=""):
+def award_xp(user_id: int, amount: int, reason: str = "") -> None:
     db = SessionLocal()
     try:
         player = db.query(Player).filter(Player.id == user_id).first()
@@ -17,7 +18,7 @@ def award_xp(user_id, amount, reason=""):
         db.close()
 
 
-def award_win_bonus(players, impostors, winning_team):
+def award_win_bonus(players: Dict[int, Any], impostors: Set[int], winning_team: str) -> None:
     for uid in players:
         is_impostor = uid in impostors
         if winning_team == "crewmates" and not is_impostor:
@@ -26,7 +27,7 @@ def award_win_bonus(players, impostors, winning_team):
             award_xp(uid, 30, "Impostor win")
 
 
-def handle_vote_xp(votes, voted_out_id, impostors):
+def handle_vote_xp(votes: Dict[int, Any], voted_out_id: int, impostors: Set[int]) -> None:
     is_impostor = voted_out_id in impostors
     for voter_id, target_id in votes.items():
         if target_id == voted_out_id and is_impostor:

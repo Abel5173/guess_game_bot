@@ -1,19 +1,21 @@
 import pytest
-from bot.impostor.core import ImpostorCore, calculate_title
+from typing import Any
+from bot.impostor.core import ImpostorCore
+from bot.impostor.utils import calculate_title
 
 
 @pytest.fixture
-def core():
+def core() -> ImpostorCore:
     return ImpostorCore({"min_players": 4, "impostor_count": 1})
 
 
-def test_add_player(core):
+def test_add_player(core: ImpostorCore) -> None:
     assert core.add_player(1, "Alice")
     assert not core.add_player(1, "Alice")  # double join
     assert core.players[1]["name"] == "Alice"
 
 
-def test_assign_roles(core):
+def test_assign_roles(core: ImpostorCore) -> None:
     for i in range(1, 5):
         core.add_player(i, f"P{i}")
     core.assign_roles()
@@ -21,7 +23,7 @@ def test_assign_roles(core):
     assert all(uid in core.players for uid in core.impostors)
 
 
-def test_start_game(core):
+def test_start_game(core: ImpostorCore) -> None:
     for i in range(1, 5):
         core.add_player(i, f"P{i}")
     assert core.start_game()
@@ -30,14 +32,14 @@ def test_start_game(core):
     assert len(core.impostors) == 1
 
 
-def test_start_game_not_enough(core):
+def test_start_game_not_enough(core: ImpostorCore) -> None:
     for i in range(1, 3):
         core.add_player(i, f"P{i}")
     assert not core.start_game()
     assert not core.started
 
 
-def test_vote_and_resolve(core):
+def test_vote_and_resolve(core: ImpostorCore) -> None:
     for i in range(1, 5):
         core.add_player(i, f"P{i}")
     core.start_game()
@@ -48,7 +50,7 @@ def test_vote_and_resolve(core):
     assert not core.players[2]["alive"]
 
 
-def test_vote_tie(core):
+def test_vote_tie(core: ImpostorCore) -> None:
     for i in range(1, 5):
         core.add_player(i, f"P{i}")
     core.start_game()
@@ -58,7 +60,7 @@ def test_vote_tie(core):
     assert "tie" in msg
 
 
-def test_check_game_over(core):
+def test_check_game_over(core: ImpostorCore) -> None:
     for i in range(1, 5):
         core.add_player(i, f"P{i}")
     core.start_game()
@@ -77,7 +79,7 @@ def test_check_game_over(core):
     assert "win" in msg
 
 
-def test_reset(core):
+def test_reset(core: ImpostorCore) -> None:
     for i in range(1, 5):
         core.add_player(i, f"P{i}")
     core.start_game()
@@ -88,7 +90,7 @@ def test_reset(core):
     assert core.phase == "waiting"
 
 
-def test_calculate_title():
+def test_calculate_title() -> None:
     assert calculate_title(0) == "Rookie"
     assert calculate_title(30) == "Apprentice"
     assert calculate_title(60) == "Sleuth"

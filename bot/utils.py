@@ -1,6 +1,7 @@
 import os
 import requests
 import asyncio
+from typing import List, Optional, Any
 from dotenv import load_dotenv
 from tenacity import retry, stop_after_attempt, wait_fixed
 
@@ -10,7 +11,7 @@ TOKEN = os.getenv("BOT_TOKEN")
 
 
 @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
-async def query_ai(prompt):
+async def query_ai(prompt: str) -> str:
     headers = {"Authorization": f"Bearer {HF_API_KEY}"}
     payload = {"inputs": prompt}
     try:
@@ -28,7 +29,7 @@ async def query_ai(prompt):
         return f"❌ Error: {e}"
 
 
-def sync_generate_clue(player_names):
+def sync_generate_clue(player_names: List[str]) -> str:
     prompt = (
         f"In a group game, one player is secretly an impostor. "
         f"The players are: {', '.join(player_names)}. "
@@ -46,12 +47,12 @@ def sync_generate_clue(player_names):
     return "🤖 I'm stumped... try again later."
 
 
-async def generate_clue(player_names):
+async def generate_clue(player_names: List[str]) -> str:
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(None, sync_generate_clue, player_names)
 
 
-async def generate_complex_clue(player_names, history=None):
+async def generate_complex_clue(player_names: List[str], history: Optional[str] = None) -> str:
     prompt = (
         f"In a group game, one player is secretly an impostor. "
         f"The players are: {', '.join(player_names)}. "

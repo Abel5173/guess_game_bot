@@ -1,9 +1,10 @@
 import random
 import asyncio
+from typing import List, Optional, Tuple, Any
 from bot.utils import query_ai
 
 
-async def ai_riddle_task(player_names, discussion_history=None):
+async def ai_riddle_task(player_names: List[str], discussion_history: Optional[str] = None) -> Tuple[str, str, str]:
     prompt = (
         f"In a group game with players: {
             ', '.join(player_names)}.\n"
@@ -17,7 +18,7 @@ async def ai_riddle_task(player_names, discussion_history=None):
     return "ai_riddle", riddle, answer
 
 
-def emoji_decode_task():
+def emoji_decode_task() -> Tuple[str, str, str]:
     emoji_puzzles = [
         ("🐱📦", "cat in the box"),
         ("👑🦁", "lion king"),
@@ -29,7 +30,7 @@ def emoji_decode_task():
     return "emoji_decode", f"Decode this emoji: {puzzle}", answer
 
 
-def quick_math_task():
+def quick_math_task() -> Tuple[str, str, str]:
     math_puzzles = [
         ("What is 3 + 4 * 2?", "11"),
         ("If you have 5 apples and give 2 away, how many do you have?", "3"),
@@ -39,7 +40,7 @@ def quick_math_task():
     return "quick_math", puzzle, answer
 
 
-def word_unscramble_task():
+def word_unscramble_task() -> Tuple[str, str, str]:
     words = [
         ("tca", "cat"),
         ("odg", "dog"),
@@ -51,7 +52,7 @@ def word_unscramble_task():
     return "word_unscramble", f"Unscramble this word: {scrambled}", answer
 
 
-def trivia_task():
+def trivia_task() -> Tuple[str, str, str]:
     trivia = [
         ("What planet is known as the Red Planet?", "mars"),
         ("Who wrote 'Romeo and Juliet'?", "shakespeare"),
@@ -61,7 +62,7 @@ def trivia_task():
     return "trivia", question, answer
 
 
-def pattern_recognition_task():
+def pattern_recognition_task() -> Tuple[str, str, str]:
     patterns = [
         ("What comes next: A, C, E, G, ?", "i"),
         ("What comes next: 1, 4, 9, 16, ?", "25"),
@@ -71,7 +72,7 @@ def pattern_recognition_task():
     return "pattern_recognition", question, answer
 
 
-async def get_random_task(player_names, discussion_history=None):
+async def get_random_task(player_names: List[str], discussion_history: Optional[str] = None) -> Tuple[str, str, str]:
     task_funcs = [
         lambda: ai_riddle_task(player_names, discussion_history),
         lambda: asyncio.to_thread(emoji_decode_task),

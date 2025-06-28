@@ -1,7 +1,7 @@
 # Core game state, player/role management, and game start/reset will go here.
 
 import random
-from typing import Dict, Set, Optional
+from typing import Dict, Set, Optional, Tuple, Any
 from bot.database.models import Player
 from bot.database import SessionLocal
 from bot.impostor.events import award_xp, award_win_bonus, handle_vote_xp
@@ -14,13 +14,14 @@ class ImpostorCore:
     Uses a database for persistent player stats.
     """
 
-    def __init__(self, config: Optional[dict] = None):
+    def __init__(self, config: Optional[dict] = None) -> None:
         # user_id: {'name': name, 'alive': True}
         self.players: Dict[int, dict] = {}
         self.group_chat_id: Optional[int] = None
         self.started: bool = False
         self.impostors: Set[int] = set()
         self.phase: str = "waiting"
+        self.votes: Dict[int, Optional[int]] = {}
         self.config = config or {
             "min_players": 4,
             "impostor_count": 1,
@@ -41,7 +42,7 @@ class ImpostorCore:
         db.close()
         return True
 
-    def assign_roles(self):
+    def assign_roles(self) -> None:
         """Randomly assign impostor and crewmate roles to players."""
         all_ids = list(self.players.keys())
         self.impostors = set(random.sample(all_ids, self.config["impostor_count"]))
@@ -58,15 +59,15 @@ class ImpostorCore:
     def get_alive_players(self) -> Dict[int, dict]:
         return {uid: player for uid, player in self.players.items() if player["alive"]}
 
-    def vote(self, voter_id, target_id):
+    def vote(self, voter_id: int, target_id: int) -> bool:
         if voter_id in self.players and target_id in self.players:
             self.votes[voter_id] = target_id
             award_xp(voter_id, 5, "Vote cast")
             return True
         return False
 
-    def resolve_votes(self):
-        counts = {}
+    def resolve_votes(self) -> Tuple[Optional[int], str]:
+        counts: Dict[int, int] = {}
         for target in self.votes.values():
             if target is not None:
                 counts[target] = counts.get(target, 0) + 1
@@ -82,7 +83,7 @@ class ImpostorCore:
         self.votes.clear()
         return voted_out, f"{self.players[voted_out]['name']} was ejected!"
 
-    def check_game_over(self):
+    def check_game_over(self) -> Tuple[bool, str]:
         impostors_alive = len(
             [
                 uid
@@ -105,19 +106,19 @@ class ImpostorCore:
             return True, "💀 Impostor wins!"
         return False, ""
 
-    def get_profile(self, user_id: int):
+    def get_profile(self, user_id: int) -> Optional[Player]:
         db = SessionLocal()
         player = db.query(Player).filter(Player.id == user_id).first()
         db.close()
         return player
 
-    def get_leaderboard(self, top_n: int = 10):
+    def get_leaderboard(self, top_n: int = 10) -> list[Player]:
         db = SessionLocal()
         top_players = db.query(Player).order_by(Player.xp.desc()).limit(top_n).all()
         db.close()
         return top_players
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset the game state for a new game."""
         self.players.clear()
         self.group_chat_id = None
