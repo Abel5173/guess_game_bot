@@ -94,4 +94,4 @@ def test_calculate_title():
     assert calculate_title(60) == 'Sleuth'
     assert calculate_title(120) == 'Veteran'
     assert calculate_title(200) == 'Mastermind'
-    assert calculate_title(300) == 'Legend' 
+    assert calculate_title(300) == 'Legend'

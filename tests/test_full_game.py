@@ -1,8 +1,9 @@
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 from types import SimpleNamespace
 from bot.impostor import ImpostorGame
-from bot.database import init_db, SessionLocal
+from bot.database import init_db
+
 
 @pytest.mark.asyncio
 async def test_full_game_flow():
@@ -82,6 +83,7 @@ async def test_full_game_flow():
     # Assert no exceptions and all reply_text called
     assert True
 
+
 @pytest.mark.asyncio
 async def test_edge_cases():
     game = ImpostorGame()
@@ -113,6 +115,7 @@ async def test_edge_cases():
     await game.show_rules(update)
     assert True
 
+
 @pytest.mark.asyncio
 async def test_task_types():
     from bot.tasks import clue_tasks
@@ -130,8 +133,7 @@ async def test_task_types():
         assert isinstance(puzzle, str)
         assert isinstance(answer, str)
     # Test async AI riddle
-    import asyncio
     task_type, puzzle, answer = await clue_tasks.get_random_task(player_names)
     assert isinstance(task_type, str)
     assert isinstance(puzzle, str)
-    assert isinstance(answer, str) 
+    assert isinstance(answer, str)

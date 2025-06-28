@@ -3,6 +3,7 @@ from bot.impostor import ImpostorGame
 from bot.utils import generate_complex_clue
 from unittest.mock import AsyncMock, MagicMock
 
+
 @pytest.mark.asyncio
 async def test_discussion_phase():
     game = ImpostorGame()
@@ -15,6 +16,7 @@ async def test_discussion_phase():
     assert game.core.discussion_history == []
     context.bot.send_message.assert_called()
 
+
 @pytest.mark.asyncio
 async def test_voting_phase():
     game = ImpostorGame()
@@ -26,6 +28,7 @@ async def test_voting_phase():
     assert game.core.phase == 'voting'
     assert game.core.votes == {}
     context.bot.send_message.assert_called()
+
 
 @pytest.mark.asyncio
 async def test_handle_vote():
@@ -46,7 +49,11 @@ async def test_handle_vote():
     update.callback_query.answer.assert_called()
     update.callback_query.message.reply_text.assert_called()
 
+
 @pytest.mark.asyncio
 async def test_generate_complex_clue():
-    clue = await generate_complex_clue(['Alice', 'Bob', 'Charlie', 'Dana'], history="Alice: I suspect Bob!")
+    clue = await generate_complex_clue(
+        ['Alice', 'Bob', 'Charlie', 'Dana'],
+        history="Alice: I suspect Bob!"
+    )
     assert isinstance(clue, str)
