@@ -13,7 +13,7 @@ HELP_TEXT = (
 )
 
 ABOUT_TEXT = (
-    "<b>About Guess-Game-Bot</b>\n\n"
+    "<b>About guess_game_bot</b>\n\n"
     "A modern Telegram bot with fun social games and AI-powered clues.\n"
     "Created for group play and powered by HuggingFace AI.\n"
 )
