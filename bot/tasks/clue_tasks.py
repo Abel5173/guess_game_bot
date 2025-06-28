@@ -8,8 +8,7 @@ async def ai_riddle_task(
     player_names: List[str], discussion_history: Optional[str] = None
 ) -> Tuple[str, str, str]:
     prompt = (
-        f"In a group game with players: {
-            ', '.join(player_names)}.\n"
+        f"In a group game with players: {', '.join(player_names)}.\n"
         "One player is secretly an impostor.\n"
         "Create a mysterious riddle or cryptic clue hinting at the impostor without naming them.\n"
         "Use metaphors or riddles only.\n"
