@@ -81,7 +81,9 @@ async def test_game_initialization(game):
     assert len(game.core.impostors) == 0
 
     # Test custom config
-    custom_game = ImpostorGame({'min_players': 6, 'impostor_count': 2, 'tasks_required': 5})
+    custom_game = ImpostorGame({
+        'min_players': 6, 'impostor_count': 2, 'tasks_required': 5
+    })
     assert custom_game.core.config['min_players'] == 6
     assert custom_game.core.config['impostor_count'] == 2
 
@@ -568,8 +570,10 @@ async def test_discussion_history(game, users, update_template):
         await game.handle_discussion(update, AsyncMock())
 
     assert len(game.core.discussion_history) == 3
-    assert "Alice: I think Bob is suspicious" in game.core.discussion_history[0]
-    assert "Bob: No way, Alice is the impostor!" in game.core.discussion_history[1]
+    assert ("Alice: I think Bob is suspicious"
+            in game.core.discussion_history[0])
+    assert ("Bob: No way, Alice is the impostor!"
+            in game.core.discussion_history[1])
 
 # ============================================================================
 # ERROR HANDLING AND EDGE CASES
@@ -894,10 +898,12 @@ async def test_custom_configurations():
         assert game.core.config['impostor_count'] == config['impostor_count']
 
         if 'tasks_required' in config:
-            assert game.core.config['tasks_required'] == config['tasks_required']
+            assert (game.core.config['tasks_required']
+                    == config['tasks_required'])
 
         if 'anonymous_voting' in config:
-            assert game.core.config['anonymous_voting'] == config['anonymous_voting']
+            assert (game.core.config['anonymous_voting']
+                    == config['anonymous_voting'])
 
 # ============================================================================
 # MEMORY AND RESOURCE TESTS
