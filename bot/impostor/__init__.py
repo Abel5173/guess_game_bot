@@ -86,8 +86,7 @@ class ImpostorGame:
         is_impostor = user.id in self.core.impostors
         xp, title = self.core.award_task_xp(user.id, is_impostor)
         if xp is not None:
-            return f"✅ {
-                user.first_name} gained XP! New XP: {xp}, Title: {title}"
+            return f"✅ {user.first_name} gained XP! New XP: {xp}, Title: {title}"
         return "⚠️ You're not in the DB. Use /startgame first."
 
     async def show_main_menu(self, update: Update):
@@ -120,10 +119,7 @@ class ImpostorGame:
                 player.fake_tasks_done += 1
             player.title = calculate_title(player.xp)
             db.commit()
-            msg = f"✅ {
-                player.name} gained XP! New XP: {
-                player.xp}, Title: {
-                player.title}"
+            msg = f"✅ {player.name} gained XP! New XP: {player.xp}, Title: {player.title}"
         else:
             msg = "⚠️ You're not in the DB. Use Join Game first."
         db.close()
