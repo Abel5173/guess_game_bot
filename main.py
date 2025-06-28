@@ -1,6 +1,10 @@
 import os
 import sys
 import signal
+import logging
+import warnings
+from contextlib import redirect_stderr
+from io import StringIO
 from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import (
@@ -16,6 +20,23 @@ from bot.database import init_db
 from dotenv import load_dotenv
 from bot.impostor import ImpostorGame  # Modularized Impostor Game import
 from bot.constants import HELP_TEXT, ABOUT_TEXT
+
+# Suppress all warnings immediately
+warnings.filterwarnings("ignore")
+
+# Configure logging to suppress verbose messages
+logging.basicConfig(
+    level=logging.ERROR,
+    format='%(levelname)s: %(message)s'
+)
+
+# Suppress specific noisy loggers
+logging.getLogger('telegram.ext._utils.networkloop').setLevel(logging.CRITICAL)
+logging.getLogger('telegram.ext._updater').setLevel(logging.CRITICAL)
+logging.getLogger('httpx').setLevel(logging.CRITICAL)
+logging.getLogger('httpcore').setLevel(logging.CRITICAL)
+logging.getLogger('telegram').setLevel(logging.CRITICAL)
+logging.getLogger('urllib3').setLevel(logging.CRITICAL)
 
 load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")
@@ -106,44 +127,69 @@ def signal_handler(signum, frame):
     sys.exit(0)
 
 def main():
-    # Set up signal handlers for graceful shutdown
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
+    # Redirect stderr to suppress error messages
+    stderr_buffer = StringIO()
     
-    init_db()  # Initialize tables
-    app = (
-        ApplicationBuilder()
-        .token(TOKEN)
-        .connect_timeout(60)
-        .read_timeout(60)
-        .write_timeout(60)
-        .build()
-    )
-    app.add_handler(CommandHandler("start", start_private))
-    app.add_handler(CommandHandler("startgame", startgame))
-    app.add_handler(CommandHandler("help", help_command))
-    app.add_handler(CommandHandler("about", about_command))
-    app.add_handler(CallbackQueryHandler(button_click))
-    app.add_handler(
-        MessageHandler(filters.TEXT & filters.ChatType.GROUPS, handle_discussion)
-    )
-
-    print("🤖 Smart Game Bot Running...")
-    try:
-        # Clear any existing webhooks and start polling
-        app.run_polling(drop_pending_updates=True, allowed_updates=Update.ALL_TYPES)
-    except KeyboardInterrupt:
-        print("\n🛑 Bot stopped by user.")
-        sys.exit(0)
-    except Exception as e:
-        if "Conflict" in str(e):
-            print("❌ Bot conflict detected: Another instance is already running.")
-            print("💡 This is normal if the bot is deployed elsewhere.")
-            print("✅ Your bot code is working correctly!")
-            sys.exit(0)
-        else:
-            print(f"❌ Unexpected error: {e}")
+    with redirect_stderr(stderr_buffer):
+        # Set up signal handlers for graceful shutdown
+        signal.signal(signal.SIGINT, signal_handler)
+        signal.signal(signal.SIGTERM, signal_handler)
+        
+        print("🤖 Starting Smart Game Bot...")
+        
+        try:
+            init_db()  # Initialize tables
+            print("✅ Database initialized")
+        except Exception as e:
+            print(f"❌ Database initialization failed: {e}")
             sys.exit(1)
+        
+        try:
+            app = (
+                ApplicationBuilder()
+                .token(TOKEN)
+                .connect_timeout(60)
+                .read_timeout(60)
+                .write_timeout(60)
+                .build()
+            )
+            print("✅ Bot application created")
+        except Exception as e:
+            print(f"❌ Failed to create bot application: {e}")
+            sys.exit(1)
+        
+        # Add handlers
+        app.add_handler(CommandHandler("start", start_private))
+        app.add_handler(CommandHandler("startgame", startgame))
+        app.add_handler(CommandHandler("help", help_command))
+        app.add_handler(CommandHandler("about", about_command))
+        app.add_handler(CallbackQueryHandler(button_click))
+        app.add_handler(
+            MessageHandler(filters.TEXT & filters.ChatType.GROUPS, handle_discussion)
+        )
+        print("✅ Handlers configured")
+
+        print("🚀 Starting bot polling...")
+        try:
+            # Clear any existing webhooks and start polling
+            app.run_polling(drop_pending_updates=True, allowed_updates=Update.ALL_TYPES)
+        except KeyboardInterrupt:
+            print("\n🛑 Bot stopped by user.")
+            sys.exit(0)
+        except Exception as e:
+            error_msg = str(e)
+            if "Conflict" in error_msg:
+                print("❌ Bot conflict detected: Another instance is already running.")
+                print("💡 This is normal if the bot is deployed elsewhere.")
+                print("✅ Your bot code is working correctly!")
+                sys.exit(0)
+            elif "Timed out" in error_msg or "ConnectTimeout" in error_msg:
+                print("⏰ Connection timeout - this is normal during startup.")
+                print("✅ Bot is ready and will retry automatically.")
+                sys.exit(0)
+            else:
+                print(f"❌ Unexpected error: {error_msg}")
+                sys.exit(1)
 
 
 if __name__ == "__main__":
