@@ -1,14 +1,17 @@
 import pytest
 from bot.impostor.core import ImpostorCore, calculate_title
 
+
 @pytest.fixture
 def core():
     return ImpostorCore({'min_players': 4, 'impostor_count': 1})
+
 
 def test_add_player(core):
     assert core.add_player(1, 'Alice')
     assert not core.add_player(1, 'Alice')  # double join
     assert core.players[1]['name'] == 'Alice'
+
 
 def test_assign_roles(core):
     for i in range(1, 5):
@@ -16,6 +19,7 @@ def test_assign_roles(core):
     core.assign_roles()
     assert len(core.impostors) == 1
     assert all(uid in core.players for uid in core.impostors)
+
 
 def test_start_game(core):
     for i in range(1, 5):
@@ -25,11 +29,13 @@ def test_start_game(core):
     assert core.phase == 'task'
     assert len(core.impostors) == 1
 
+
 def test_start_game_not_enough(core):
     for i in range(1, 3):
         core.add_player(i, f'P{i}')
     assert not core.start_game()
     assert not core.started
+
 
 def test_vote_and_resolve(core):
     for i in range(1, 5):
@@ -41,6 +47,7 @@ def test_vote_and_resolve(core):
     assert 'ejected' in msg
     assert not core.players[2]['alive']
 
+
 def test_vote_tie(core):
     for i in range(1, 5):
         core.add_player(i, f'P{i}')
@@ -49,6 +56,7 @@ def test_vote_tie(core):
     voted_out, msg = core.resolve_votes()
     assert voted_out is None
     assert 'tie' in msg
+
 
 def test_check_game_over(core):
     for i in range(1, 5):
@@ -68,6 +76,7 @@ def test_check_game_over(core):
     assert over
     assert 'win' in msg
 
+
 def test_reset(core):
     for i in range(1, 5):
         core.add_player(i, f'P{i}')
@@ -77,6 +86,7 @@ def test_reset(core):
     assert not core.impostors
     assert not core.started
     assert core.phase == 'waiting'
+
 
 def test_calculate_title():
     assert calculate_title(0) == 'Rookie'
