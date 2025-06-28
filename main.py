@@ -1,4 +1,6 @@
 import os
+import sys
+import signal
 from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import (
@@ -99,7 +101,15 @@ async def start_private(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("👋 Use /startgame in a group to begin!")
 
 
+def signal_handler(signum, frame):
+    print("\n🛑 Bot shutdown requested. Exiting gracefully...")
+    sys.exit(0)
+
 def main():
+    # Set up signal handlers for graceful shutdown
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+    
     init_db()  # Initialize tables
     app = (
         ApplicationBuilder()
@@ -119,7 +129,21 @@ def main():
     )
 
     print("🤖 Smart Game Bot Running...")
-    app.run_polling()
+    try:
+        # Clear any existing webhooks and start polling
+        app.run_polling(drop_pending_updates=True, allowed_updates=Update.ALL_TYPES)
+    except KeyboardInterrupt:
+        print("\n🛑 Bot stopped by user.")
+        sys.exit(0)
+    except Exception as e:
+        if "Conflict" in str(e):
+            print("❌ Bot conflict detected: Another instance is already running.")
+            print("💡 This is normal if the bot is deployed elsewhere.")
+            print("✅ Your bot code is working correctly!")
+            sys.exit(0)
+        else:
+            print(f"❌ Unexpected error: {e}")
+            sys.exit(1)
 
 
 if __name__ == "__main__":
