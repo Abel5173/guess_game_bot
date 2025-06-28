@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, Boolean, DateTime
 from sqlalchemy.sql import func
 from bot.database import Base
 
+
 class Player(Base):
     __tablename__ = "players"
 
@@ -14,6 +15,7 @@ class Player(Base):
     wins = Column(Integer, default=0)
     losses = Column(Integer, default=0)
 
+
 class Task(Base):
     __tablename__ = "tasks"
     id = Column(Integer, primary_key=True, index=True)
@@ -25,4 +27,4 @@ class Task(Base):
     status = Column(String, default="pending")  # pending/completed/failed
     timestamp = Column(DateTime(timezone=True), server_default=func.now())
     team_id = Column(Integer, nullable=True)  # For group/team tasks
-    is_group_task = Column(Boolean, default=False) 
+    is_group_task = Column(Boolean, default=False)

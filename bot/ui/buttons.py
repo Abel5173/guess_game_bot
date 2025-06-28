@@ -1,5 +1,6 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
+
 def main_menu():
     """Main menu with core actions."""
     keyboard = [
@@ -13,6 +14,7 @@ def main_menu():
     ]
     return InlineKeyboardMarkup(keyboard)
 
+
 def voting_menu(alive_players):
     """
     Creates a voting menu with buttons for each alive player plus skip vote.
@@ -23,11 +25,13 @@ def voting_menu(alive_players):
     Returns:
         InlineKeyboardMarkup: Voting buttons markup.
     """
-    keyboard = [
-        [InlineKeyboardButton(name, callback_data=f"vote_{user_id}")] for user_id, name in alive_players.items()
-    ]
-    keyboard.append([InlineKeyboardButton("⏭️ Skip Vote", callback_data="vote_skip")])
+    keyboard = [[InlineKeyboardButton(name,
+                                      callback_data=f"vote_{user_id}")] for user_id,
+                name in alive_players.items()]
+    keyboard.append([InlineKeyboardButton(
+        "⏭️ Skip Vote", callback_data="vote_skip")])
     return InlineKeyboardMarkup(keyboard)
+
 
 def join_game_menu():
     """Buttons for joining and starting the impostor game."""
@@ -37,10 +41,11 @@ def join_game_menu():
     ]
     return InlineKeyboardMarkup(keyboard)
 
+
 def confirm_end_game():
     """Confirm end game menu."""
     keyboard = [
         [InlineKeyboardButton("✅ Yes, End Game", callback_data="confirm_end_game")],
         [InlineKeyboardButton("❌ Cancel", callback_data="cancel_end_game")]
     ]
-    return InlineKeyboardMarkup(keyboard) 
+    return InlineKeyboardMarkup(keyboard)

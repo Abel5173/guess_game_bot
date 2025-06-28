@@ -1,9 +1,12 @@
 from bot.utils import query_ai
+from telegram import ParseMode
+
 
 class AIClueManager:
     """
     Handles AI clue generation and private clue delivery for the Impostor Game.
     """
+
     def __init__(self, core):
         self.core = core
 
@@ -12,13 +15,13 @@ class AIClueManager:
             if not p['alive']:
                 continue
             try:
-                history = "\n".join(self.core.discussion_history[-3:]) or "Not much was said."
+                history = "\n".join(
+                    self.core.discussion_history[-3:]) or "Not much was said."
                 if p['role'] == 'crewmate':
                     prompt = (
-                        f"You are playing a social deduction game. One of the following players is the impostor: "
-                        f"{', '.join([pl['name'] for pid, pl in self.core.get_alive_players().items() if pid != uid])}.\n"
-                        f"Here's the latest group discussion: {history}.\n"
-                        "Give a vague but helpful clue about who might be the impostor. Be subtle and mysterious."
+                        f"Players: {', '.join([pl['name'] for pid, pl in self.core.get_alive_players().items() if pid != uid])}\n"
+                        f"Discussion: {history}\n"
+                        "Give a subtle clue for the crewmates."
                     )
                 else:
                     prompt = (
@@ -26,6 +29,10 @@ class AIClueManager:
                         "Give a misleading clue to confuse crewmates. Include metaphors, riddles, or vague language."
                     )
                 clue = await query_ai(prompt)
-                await context.bot.send_message(uid, f"🤖 AI Clue: {clue}")
+                await context.bot.send_message(
+                    uid,
+                    f"🤖 <b>AI Clue</b> for {p['name']}\n\n{clue}",
+                    parse_mode=ParseMode.HTML
+                )
             except Exception:
-                pass 
+                pass

@@ -1,38 +1,30 @@
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.constants import ParseMode
+import os
+from telegram import Update, ParseMode
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, CallbackQueryHandler,
     MessageHandler, ContextTypes, filters
 )
-import os
+from bot.ui.buttons import main_menu
+from bot.database import init_db
 from dotenv import load_dotenv
 from bot.impostor import ImpostorGame  # Modularized Impostor Game import
 from bot.constants import HELP_TEXT, ABOUT_TEXT
-from bot.handlers.impostor_game_handlers import (
-    join_impostor_handler,
-    start_impostor_game_handler,
-    discussion_handler,
-    vote_handler,
-    status_handler,
-    profile_handler,
-    reset_game_handler,
-    leaderboard_handler
-)
-from bot.database import init_db
-from bot.ui.buttons import main_menu, voting_menu
 
 load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")
 
 games = {}  # chat_id: ImpostorGame instance
 
+
 def get_game_manager(chat_id):
     if chat_id not in games:
         games[chat_id] = ImpostorGame()
     return games[chat_id]
 
+
 async def startgame(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    msg = update.message or (update.callback_query and update.callback_query.message)
+    msg = update.message or (
+        update.callback_query and update.callback_query.message)
     if not msg:
         return
     await msg.reply_text(
@@ -41,11 +33,14 @@ async def startgame(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode=ParseMode.HTML
     )
 
+
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(HELP_TEXT, parse_mode=ParseMode.HTML)
 
+
 async def about_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(ABOUT_TEXT, parse_mode=ParseMode.HTML)
+
 
 async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
@@ -81,17 +76,23 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     except Exception as e:
         print(f"[button_click] Exception: {e}")
-        msg = update.message or (update.callback_query and update.callback_query.message)
+        msg = update.message or (
+            update.callback_query and update.callback_query.message)
         if msg:
             await msg.reply_text(f"❌ An error occurred: {e}")
 
-async def handle_discussion(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+async def handle_discussion(
+        update: Update,
+        context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     game_manager = get_game_manager(chat_id)
     await game_manager.handle_discussion(update, context)
 
+
 async def start_private(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("👋 Use /startgame in a group to begin!")
+
 
 def main():
     init_db()  # Initialize tables
@@ -108,10 +109,14 @@ def main():
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("about", about_command))
     app.add_handler(CallbackQueryHandler(button_click))
-    app.add_handler(MessageHandler(filters.TEXT & filters.ChatType.GROUPS, handle_discussion))
+    app.add_handler(
+        MessageHandler(
+            filters.TEXT & filters.ChatType.GROUPS,
+            handle_discussion))
 
     print("🤖 Smart Game Bot Running...")
     app.run_polling()
+
 
 if __name__ == "__main__":
     main()
