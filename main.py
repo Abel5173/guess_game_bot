@@ -25,18 +25,15 @@ from bot.constants import HELP_TEXT, ABOUT_TEXT
 warnings.filterwarnings("ignore")
 
 # Configure logging to suppress verbose messages
-logging.basicConfig(
-    level=logging.ERROR,
-    format='%(levelname)s: %(message)s'
-)
+logging.basicConfig(level=logging.ERROR, format="%(levelname)s: %(message)s")
 
 # Suppress specific noisy loggers
-logging.getLogger('telegram.ext._utils.networkloop').setLevel(logging.CRITICAL)
-logging.getLogger('telegram.ext._updater').setLevel(logging.CRITICAL)
-logging.getLogger('httpx').setLevel(logging.CRITICAL)
-logging.getLogger('httpcore').setLevel(logging.CRITICAL)
-logging.getLogger('telegram').setLevel(logging.CRITICAL)
-logging.getLogger('urllib3').setLevel(logging.CRITICAL)
+logging.getLogger("telegram.ext._utils.networkloop").setLevel(logging.CRITICAL)
+logging.getLogger("telegram.ext._updater").setLevel(logging.CRITICAL)
+logging.getLogger("httpx").setLevel(logging.CRITICAL)
+logging.getLogger("httpcore").setLevel(logging.CRITICAL)
+logging.getLogger("telegram").setLevel(logging.CRITICAL)
+logging.getLogger("urllib3").setLevel(logging.CRITICAL)
 
 load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")
@@ -126,24 +123,25 @@ def signal_handler(signum, frame):
     print("\n🛑 Bot shutdown requested. Exiting gracefully...")
     sys.exit(0)
 
+
 def main():
     # Redirect stderr to suppress error messages
     stderr_buffer = StringIO()
-    
+
     with redirect_stderr(stderr_buffer):
         # Set up signal handlers for graceful shutdown
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
-        
+
         print("🤖 Starting Smart Game Bot...")
-        
+
         try:
             init_db()  # Initialize tables
             print("✅ Database initialized")
         except Exception as e:
             print(f"❌ Database initialization failed: {e}")
             sys.exit(1)
-        
+
         try:
             app = (
                 ApplicationBuilder()
@@ -157,7 +155,7 @@ def main():
         except Exception as e:
             print(f"❌ Failed to create bot application: {e}")
             sys.exit(1)
-        
+
         # Add handlers
         app.add_handler(CommandHandler("start", start_private))
         app.add_handler(CommandHandler("startgame", startgame))
