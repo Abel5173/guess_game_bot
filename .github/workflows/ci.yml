@@ -34,4 +34,4 @@ jobs:
     - name: Run tests with coverage
       run: |
         pip install pytest-cov
-        pytest --cov=bot --cov-report=term-missing -vv tests/
+        PYTHONPATH=. pytest --cov=bot --cov-report=term-missing -vv tests/
