@@ -1,5 +1,5 @@
 from telegram.ext import ContextTypes
-from telegram import ParseMode
+from telegram.constants import ParseMode
 from typing import Dict, Optional, Tuple, Any
 
 

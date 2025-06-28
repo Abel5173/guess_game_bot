@@ -1,5 +1,5 @@
 from bot.utils import query_ai
-from telegram import ParseMode
+from telegram.constants import ParseMode
 
 
 class AIClueManager:
