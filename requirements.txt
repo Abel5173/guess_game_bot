@@ -10,6 +10,7 @@ httpx==0.28.1
 idna==3.10
 iniconfig==2.1.0
 mccabe==0.7.0
+mypy==1.13.0
 packaging==25.0
 pluggy==1.6.0
 pycodestyle==2.14.0
