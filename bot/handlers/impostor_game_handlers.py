@@ -12,7 +12,9 @@ def get_game(chat_id: int) -> ImpostorGame:
     return impostor_games[chat_id]
 
 
-async def join_impostor_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def join_impostor_handler(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
     """Handler for joining the Impostor Game."""
     if update.effective_chat is not None:
         chat_id = update.effective_chat.id
@@ -30,7 +32,9 @@ async def start_impostor_game_handler(
         await game.start_impostor_game(update, context)
 
 
-async def discussion_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def discussion_handler(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
     """Handler for group discussion messages during the discussion phase."""
     if update.effective_chat is not None:
         chat_id = update.effective_chat.id
@@ -61,7 +65,9 @@ async def profile_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         await game.show_profile(update)
 
 
-async def reset_game_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def reset_game_handler(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
     """Handler to reset the game in a group chat."""
     if update.effective_chat is not None:
         chat_id = update.effective_chat.id
@@ -74,7 +80,9 @@ async def reset_game_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 await update.message.reply_text("No game to reset.")
 
 
-async def leaderboard_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def leaderboard_handler(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
     if update.effective_chat is not None:
         chat_id = update.effective_chat.id
         game = get_game(chat_id)

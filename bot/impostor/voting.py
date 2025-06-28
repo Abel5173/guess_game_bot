@@ -41,7 +41,9 @@ class VotingManager:
             self.core.players[voted_out]['name']} was ejected!",
         )
 
-    async def handle_vote(self, update: Any, context: ContextTypes.DEFAULT_TYPE) -> None:
+    async def handle_vote(
+        self, update: Any, context: ContextTypes.DEFAULT_TYPE
+    ) -> None:
         query = update.callback_query
         await query.answer()
         user_id = query.from_user.id

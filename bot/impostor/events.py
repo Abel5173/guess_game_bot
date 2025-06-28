@@ -18,7 +18,9 @@ def award_xp(user_id: int, amount: int, reason: str = "") -> None:
         db.close()
 
 
-def award_win_bonus(players: Dict[int, Any], impostors: Set[int], winning_team: str) -> None:
+def award_win_bonus(
+    players: Dict[int, Any], impostors: Set[int], winning_team: str
+) -> None:
     for uid in players:
         is_impostor = uid in impostors
         if winning_team == "crewmates" and not is_impostor:
@@ -27,7 +29,9 @@ def award_win_bonus(players: Dict[int, Any], impostors: Set[int], winning_team: 
             award_xp(uid, 30, "Impostor win")
 
 
-def handle_vote_xp(votes: Dict[int, Any], voted_out_id: int, impostors: Set[int]) -> None:
+def handle_vote_xp(
+    votes: Dict[int, Any], voted_out_id: int, impostors: Set[int]
+) -> None:
     is_impostor = voted_out_id in impostors
     for voter_id, target_id in votes.items():
         if target_id == voted_out_id and is_impostor:

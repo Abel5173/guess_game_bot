@@ -4,7 +4,9 @@ from typing import List, Optional, Tuple, Any
 from bot.utils import query_ai
 
 
-async def ai_riddle_task(player_names: List[str], discussion_history: Optional[str] = None) -> Tuple[str, str, str]:
+async def ai_riddle_task(
+    player_names: List[str], discussion_history: Optional[str] = None
+) -> Tuple[str, str, str]:
     prompt = (
         f"In a group game with players: {
             ', '.join(player_names)}.\n"
@@ -72,7 +74,9 @@ def pattern_recognition_task() -> Tuple[str, str, str]:
     return "pattern_recognition", question, answer
 
 
-async def get_random_task(player_names: List[str], discussion_history: Optional[str] = None) -> Tuple[str, str, str]:
+async def get_random_task(
+    player_names: List[str], discussion_history: Optional[str] = None
+) -> Tuple[str, str, str]:
     task_funcs = [
         lambda: ai_riddle_task(player_names, discussion_history),
         lambda: asyncio.to_thread(emoji_decode_task),

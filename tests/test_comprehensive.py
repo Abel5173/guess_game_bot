@@ -354,7 +354,9 @@ async def test_ai_riddle_task():
     """Test AI riddle task generation"""
     with patch("bot.utils.query_ai") as mock_ai:
         mock_ai.return_value = "The one who speaks in riddles..."
-        task_type, puzzle, answer = await clue_tasks.ai_riddle_task(["Alice", "Bob", "Charlie"])
+        task_type, puzzle, answer = await clue_tasks.ai_riddle_task(
+            ["Alice", "Bob", "Charlie"]
+        )
 
         assert task_type == "ai_riddle"
         assert isinstance(puzzle, str)
@@ -367,7 +369,9 @@ async def test_random_task_selection():
     # Test multiple calls to ensure randomness
     tasks = set()
     for _ in range(10):
-        task_type, puzzle, answer = await clue_tasks.get_random_task(["Alice", "Bob", "Charlie"])
+        task_type, puzzle, answer = await clue_tasks.get_random_task(
+            ["Alice", "Bob", "Charlie"]
+        )
         tasks.add(task_type)
         assert isinstance(task_type, str)
         assert isinstance(puzzle, str)

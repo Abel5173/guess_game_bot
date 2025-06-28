@@ -52,7 +52,9 @@ async def generate_clue(player_names: List[str]) -> str:
     return await loop.run_in_executor(None, sync_generate_clue, player_names)
 
 
-async def generate_complex_clue(player_names: List[str], history: Optional[str] = None) -> str:
+async def generate_complex_clue(
+    player_names: List[str], history: Optional[str] = None
+) -> str:
     prompt = (
         f"In a group game, one player is secretly an impostor. "
         f"The players are: {', '.join(player_names)}. "
