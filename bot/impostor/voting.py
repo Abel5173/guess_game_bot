@@ -53,6 +53,27 @@ class VotingManager:
         ):
             await query.message.reply_text("⛔ You can't vote now!")
             return
+        
+        # Log vote in database if we have a session ID
+        if hasattr(self.core, 'game') and hasattr(self.core.game, 'db_session_id') and self.core.game.db_session_id:
+            try:
+                from bot.database.session_manager import GameSessionManager
+                session_manager = GameSessionManager()
+                
+                if query.data == "vote_skip":
+                    session_manager.log_vote(
+                        self.core.game.db_session_id, user_id, None, 
+                        round_number=1, vote_type="skip"
+                    )
+                elif query.data.startswith("vote_"):
+                    target_id = int(query.data.replace("vote_", ""))
+                    session_manager.log_vote(
+                        self.core.game.db_session_id, user_id, target_id, 
+                        round_number=1, vote_type="eject"
+                    )
+            except Exception as e:
+                print(f"Failed to log vote: {e}")
+        
         if query.data == "vote_skip":
             self.core.votes[user_id] = None
             await query.message.reply_text(

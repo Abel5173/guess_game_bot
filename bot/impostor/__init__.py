@@ -6,6 +6,7 @@ from telegram.constants import ParseMode
 from bot.tasks.clue_tasks import get_random_task
 from bot.database import SessionLocal
 from bot.database.models import Task, Player
+from bot.database.session_manager import GameSessionManager
 from sqlalchemy import func
 from bot.ui.buttons import main_menu, voting_menu, confirm_end_game
 from telegram import Update
@@ -15,7 +16,7 @@ from bot.impostor.utils import calculate_title
 class ImpostorGame:
     """
     Orchestrator/facade for the modular Impostor Game. Exposes a clean interface for handlers.
-    Now uses a database for persistent player stats.
+    Now uses a database for persistent player stats and session tracking.
     """
 
     def __init__(self, config=None):
@@ -26,6 +27,12 @@ class ImpostorGame:
         self.core.votes = {}
         self.core.discussion_history = []
         self.current_tasks = {}  # user_id: expected answer
+        self.session_manager = GameSessionManager()
+        self.db_session_id = None  # Will be set when game is created in a topic
+
+    def set_db_session_id(self, session_id: int):
+        """Set the database session ID for this game."""
+        self.db_session_id = session_id
 
     def add_player(self, user_id, name):
         return self.core.add_player(user_id, name)
@@ -77,6 +84,15 @@ class ImpostorGame:
             self.core.discussion_history.append(
                 f"{self.core.players[user.id]['name']}: {text}"
             )
+            
+            # Log discussion in database if we have a session ID
+            if self.db_session_id:
+                try:
+                    self.session_manager.log_discussion(
+                        self.db_session_id, user.id, text, "discussion"
+                    )
+                except Exception as e:
+                    print(f"Failed to log discussion: {e}")
 
     async def handle_vote(self, update, context):
         await self.voting.handle_vote(update, context)
@@ -119,6 +135,18 @@ class ImpostorGame:
                 player.fake_tasks_done += 1
             player.title = calculate_title(player.xp)
             db.commit()
+            
+            # Log task completion in database if we have a session ID
+            if self.db_session_id:
+                try:
+                    task_type = "crewmate_task" if user.id not in self.core.impostors else "impostor_fake_task"
+                    self.session_manager.log_task_completion(
+                        self.db_session_id, user.id, task_type, 
+                        f"Task completed by {user.first_name}", xp_gain
+                    )
+                except Exception as e:
+                    print(f"Failed to log task completion: {e}")
+            
             msg = f"✅ {player.name} gained XP! New XP: {player.xp}, Title: {player.title}"
         else:
             msg = "⚠️ You're not in the DB. Use Join Game first."

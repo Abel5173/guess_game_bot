@@ -1,53 +1,62 @@
 import os
-import requests
 import asyncio
 from typing import List, Optional, Any
 from dotenv import load_dotenv
 from tenacity import retry, stop_after_attempt, wait_fixed
+from huggingface_hub import InferenceClient
 
 load_dotenv()
 HF_API_KEY = os.getenv("HF_API_KEY")
 TOKEN = os.getenv("BOT_TOKEN")
 
+# Initialize the Hugging Face client
+client = InferenceClient(
+    provider="hf-inference",
+    api_key=HF_API_KEY,
+)
 
 @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
 async def query_ai(prompt: str) -> str:
-    headers = {"Authorization": f"Bearer {HF_API_KEY}"}
-    payload = {"inputs": prompt}
+    """Query AI using Chat Completion API."""
     try:
-        response = requests.post(
-            "https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium",
-            headers=headers,
-            json=payload,
+        completion = client.chat.completions.create(
+            model="sarvamai/sarvam-m",  # Using the working model we found
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
         )
-        if response.status_code == 200:
-            result = response.json()
-            return result[0]["generated_text"] if result else "🤖 I have no words!"
-        else:
-            return "⚠️ AI is feeling shy. Try again later."
+        return completion.choices[0].message.content
     except Exception as e:
         return f"❌ Error: {e}"
 
 
 def sync_generate_clue(player_names: List[str]) -> str:
+    """Generate a clue using Chat Completion API (sync version)."""
     prompt = (
         f"In a group game, one player is secretly an impostor. "
         f"The players are: {', '.join(player_names)}. "
         "Give a vague, mysterious clue about who the impostor might be without saying their name."
     )
-    headers = {"Authorization": f"Bearer {HF_API_KEY}"}
-    response = requests.post(
-        "https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium",
-        headers=headers,
-        json={"inputs": prompt},
-    )
-    if response.status_code == 200:
-        result = response.json()
-        return result[0]["generated_text"] if result else "🤖 AI has no clue this time."
-    return "🤖 I'm stumped... try again later."
+    try:
+        completion = client.chat.completions.create(
+            model="sarvamai/sarvam-m",
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+        )
+        return completion.choices[0].message.content
+    except Exception as e:
+        return f"🤖 Error generating clue: {e}"
 
 
 async def generate_clue(player_names: List[str]) -> str:
+    """Generate a clue asynchronously."""
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(None, sync_generate_clue, player_names)
 
@@ -55,6 +64,7 @@ async def generate_clue(player_names: List[str]) -> str:
 async def generate_complex_clue(
     player_names: List[str], history: Optional[str] = None
 ) -> str:
+    """Generate a complex clue with discussion history."""
     prompt = (
         f"In a group game, one player is secretly an impostor. "
         f"The players are: {', '.join(player_names)}. "
