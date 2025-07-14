@@ -314,5 +314,45 @@ Create a mysterious, evolving narrative that connects the games."""
         )
 
 
+    async def generate_game_summary(self, game_log: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        Generates a comprehensive game summary from a log of events.
+        """
+        prompt = f"""
+        Analyze the following game log and generate a compelling summary.
+        The log contains a list of events with timestamps, types, and data.
+        - Identify the winning team.
+        - Create a brief, dramatic narrative of the game.
+        - Determine the Most Valuable Player (MVP) and provide a reason.
+        - Highlight 2-3 notable plays or turning points.
+        - Provide a final, cinematic verdict on the game's outcome.
+
+        Game Log:
+        {json.dumps(game_log, indent=2)}
+
+        Format the output as a JSON object with the following keys:
+        "winning_team", "narrative", "mvp": {"name", "reason"}, "notable_plays": [], "final_verdict"
+        """
+
+        response = await self.generate_response(
+            prompt,
+            model_type="reasoning",
+            max_tokens=400,
+            temperature=0.7
+        )
+
+        try:
+            return json.loads(response)
+        except json.JSONDecodeError:
+            logger.error("Failed to decode game summary JSON from AI response.")
+            return {
+                "winning_team": "unknown",
+                "narrative": "The game's events are shrouded in mystery.",
+                "mvp": {"name": "N/A", "reason": "Log data was inconclusive."},
+                "notable_plays": [],
+                "final_verdict": "A definitive conclusion could not be reached.",
+            }
+
+
 # Global AI client instance
 ai_client = GameLLMClient() 

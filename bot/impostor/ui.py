@@ -61,3 +61,18 @@ def celebration_win():
 
 def celebration_lose():
     return "💀 <b>Defeat!</b>"
+
+
+def game_summary_card(summary: dict) -> str:
+    """Formats the AI-generated game summary into a shareable card."""
+    card = f"📊 **Game Over!**\n\n"
+    card += f"**Winning Team:** {summary['winning_team'].title()}\n\n"
+    card += f"**Game Summary:**\n{summary['narrative']}\n\n"
+    card += "**MVP:**\n"
+    card += f"🏅 {summary['mvp']['name']} - {summary['mvp']['reason']}\n\n"
+    card += "**Notable Plays:**\n"
+    for play in summary["notable_plays"]:
+        card += f"🔹 {play}\n"
+    card += "\n"
+    card += f"**Final Verdict:**\n{summary['final_verdict']}"
+    return card

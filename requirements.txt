@@ -10,7 +10,7 @@ alembic==1.12.1
 # AI and Machine Learning
 huggingface-hub==0.19.4
 transformers==4.35.2
-torch==2.1.1
+torch==2.3.0
 accelerate==0.24.1
 sentencepiece==0.1.99
 protobuf==4.25.1

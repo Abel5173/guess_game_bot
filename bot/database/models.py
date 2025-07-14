@@ -159,6 +159,15 @@ class TaskLog(Base):
     player = relationship("Player")
 
 
+class GameLog(Base):
+    """Store AI-generated game summaries and logs"""
+    __tablename__ = "game_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    log_data = Column(JSON)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
 class JoinQueue(Base):
     """Track users waiting to join games"""
     __tablename__ = "join_queue"

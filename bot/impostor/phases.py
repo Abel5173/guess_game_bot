@@ -1,5 +1,7 @@
 import asyncio
 from telegram.constants import ParseMode
+from telegram import Update
+from telegram.ext import ContextTypes
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import ContextTypes
 

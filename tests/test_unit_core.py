@@ -66,7 +66,7 @@ def test_check_game_over(core: ImpostorCore) -> None:
     core.start_game()
     # Remove impostors to simulate crewmate win
     core.impostors.clear()
-    over, msg = core.check_game_over()
+    over, msg, _ = core.check_game_over()
     assert over
     assert "win" in msg
     # Impostors > crewmates (kill crewmates so impostors outnumber them)
@@ -74,7 +74,7 @@ def test_check_game_over(core: ImpostorCore) -> None:
     # Kill 2 crewmates so impostors outnumber crewmates (2 vs 0)
     for i in range(3, 5):
         core.players[i]["alive"] = False
-    over, msg = core.check_game_over()
+    over, msg, _ = core.check_game_over()
     assert over
     assert "win" in msg
 

@@ -11,8 +11,8 @@ TOKEN = os.getenv("BOT_TOKEN")
 
 # Initialize the Hugging Face client
 client = InferenceClient(
-    provider="hf-inference",
-    api_key=HF_API_KEY,
+    model="mistralai/Mistral-7B-Instruct-v0.1",
+    token=HF_API_KEY,
 )
 
 @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))

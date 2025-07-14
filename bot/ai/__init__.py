@@ -3,7 +3,7 @@ AI Integration Module - Main integration for all AI-powered game features.
 """
 
 from typing import Dict, List, Optional
-from .llm_client import ai_client, GameAIClient
+from .llm_client import ai_client
 from .game_master import ai_game_master, AIGameMaster
 from .task_generator import ai_task_generator, AITaskGenerator
 from .voting_analyzer import ai_voting_analyzer, AIVotingAnalyzer

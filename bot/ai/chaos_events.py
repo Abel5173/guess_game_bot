@@ -169,13 +169,13 @@ class AIChaosEvents:
         """Generate a chaos event of the specified type."""
         # Get game context
         game_context = self._get_game_context(session_id)
-        
+
         # Generate event description using AI
-        description = await ai_client.generate_chaos_event(
-            game_context["state"],
-            game_context["alive_count"],
-            game_context["rounds"]
+        event_data = await ai_client.generate_chaos_event(
+            game_state=game_context["state"],
+            player_count=game_context["alive_count"]
         )
+        description = event_data.get("description", "A mysterious event unfolds.")
         
         # Determine duration
         template = self.event_templates.get(event_type, {})
