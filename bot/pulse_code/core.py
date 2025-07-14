@@ -1,5 +1,8 @@
 import random
 from typing import Dict, Optional, Tuple
+from bot.database import SessionLocal
+from bot.database.models import PlayerPerformance
+from bot.ai.dynamic_difficulty import get_difficulty_level, get_ai_guess_strategy
 
 class PulseCodeGame:
     """
@@ -41,6 +44,7 @@ class PulseCodeGame:
         self.game_started = True
         self.turn_order = list(self.players.keys()) + list(self.ai_opponents.keys())
 
+
     def make_guess(self, player_id: int, target_id: str, guess: str) -> Tuple[int, int, int]:
         """
         Processes a guess and returns the feedback (Hits, Flashes, Static).
@@ -62,6 +66,11 @@ class PulseCodeGame:
         # Update stress levels
         self._update_stress(player_id, static)
 
+        self.players[player_id]["guesses"] = self.players[player_id].get("guesses", 0) + 1
+
+        if hits == 4:
+            self._update_player_performance(player_id, won=True, guesses=self.players[player_id]["guesses"])
+
         return hits, flashes, static
 
     def _get_target_code(self, target_id: str) -> Optional[str]:
@@ -78,3 +87,47 @@ class PulseCodeGame:
             self.players[player_id]["stress"] += static_count * 5  # Example stress calculation
         elif player_id in self.ai_opponents:
             self.ai_opponents[player_id]["stress"] += static_count * 5
+
+    def _update_player_performance(self, player_id: int, won: bool, guesses: int):
+        """Updates the player's performance stats in the database."""
+        db = SessionLocal()
+        performance = db.query(PlayerPerformance).filter_by(player_id=player_id).first()
+
+        if not performance:
+            performance = PlayerPerformance(player_id=player_id)
+            db.add(performance)
+
+        if won:
+            performance.wins += 1
+            total_guesses = (performance.average_guesses_to_win * (performance.wins -1)) + guesses
+            performance.average_guesses_to_win = total_guesses / performance.wins
+            performance.skill_rating += 10
+        else:
+            performance.losses += 1
+            performance.skill_rating -= 10
+
+        db.commit()
+        db.close()
+
+    def get_ai_guess(self, player_id: int) -> str:
+        """Gets the AI's next guess based on the player's skill rating."""
+        db = SessionLocal()
+        performance = db.query(PlayerPerformance).filter_by(player_id=player_id).first()
+        db.close()
+
+        if performance:
+            skill_rating = performance.skill_rating
+        else:
+            skill_rating = 1000
+
+        difficulty = get_difficulty_level(skill_rating)
+        strategy = get_ai_guess_strategy(difficulty)
+
+        if strategy == "random":
+            return self._generate_pulse_code()
+        elif strategy == "logical":
+            # Add a more logical guessing strategy here later
+            return self._generate_pulse_code()
+        else: # aggressive
+            # Add a more aggressive guessing strategy here later
+            return self._generate_pulse_code()
