@@ -1,9 +1,3 @@
-#!/usr/bin/env python3
-"""
-Database initialization script for CI/CD pipeline.
-Creates all necessary database tables before running tests.
-"""
-
 import os
 from sqlalchemy import text
 from bot.database import init_db, SessionLocal, engine
