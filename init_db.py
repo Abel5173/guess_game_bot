@@ -19,10 +19,16 @@ if __name__ == "__main__":
 
         # Check for all required tables
         required_tables = [
-            "players", "tasks", "game_sessions", "player_game_links",
-            "vote_history", "discussion_logs", "task_logs", "join_queue"
+            "players",
+            "tasks",
+            "game_sessions",
+            "player_game_links",
+            "vote_history",
+            "discussion_logs",
+            "task_logs",
+            "join_queue",
         ]
-        
+
         missing_tables = []
         for table in required_tables:
             if table in tables:
@@ -30,7 +36,7 @@ if __name__ == "__main__":
             else:
                 print(f"❌ {table} table not found!")
                 missing_tables.append(table)
-        
+
         if missing_tables:
             print(f"❌ Missing tables: {missing_tables}")
             exit(1)

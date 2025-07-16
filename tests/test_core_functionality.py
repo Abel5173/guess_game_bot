@@ -154,7 +154,7 @@ async def test_game_over_conditions(game, users):
 
     # Test crewmate win (all impostors eliminated)
     game.core.impostors.clear()
-    over, msg = game.core.check_game_over()
+    over, msg, _ = game.core.check_game_over()
     assert over
     assert "win" in msg
 
@@ -167,14 +167,14 @@ async def test_game_over_conditions(game, users):
     # Kill all crewmates to make impostors outnumber them
     for uid in crewmate_ids:
         game.core.players[uid]["alive"] = False
-    over, msg = game.core.check_game_over()
+    over, msg, _ = game.core.check_game_over()
     assert over
     assert "win" in msg
 
     # Test game continues
     game.core.players[crewmate_ids[0]]["alive"] = True
     game.core.players[1]["alive"] = True
-    over, msg = game.core.check_game_over()
+    over, msg, _ = game.core.check_game_over()
     assert not over
     assert msg == ""
 

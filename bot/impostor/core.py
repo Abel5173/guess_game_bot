@@ -5,6 +5,7 @@ from typing import Dict, Set, Optional, Tuple, Any
 from bot.database.models import Player
 from bot.database import SessionLocal
 from bot.impostor.events import award_xp, award_win_bonus, handle_vote_xp
+from bot.ai.chaos_events import ai_chaos_events
 
 
 class ImpostorCore:
@@ -22,6 +23,8 @@ class ImpostorCore:
         self.impostors: Set[int] = set()
         self.phase: str = "waiting"
         self.votes: Dict[int, Optional[int]] = {}
+        self.round = 0
+        self.game_log: List[Dict[str, Any]] = []
         self.config = config or {
             "min_players": 4,
             "impostor_count": 1,
@@ -53,7 +56,10 @@ class ImpostorCore:
             return False
         self.started = True
         self.phase = "task"
+        self.round = 1
         self.assign_roles()
+        self.log_event("game_start", {"players": self.players})
+        ai_chaos_events.cleanup_session_events(self.group_chat_id)
         return True
 
     def get_alive_players(self) -> Dict[int, dict]:
@@ -81,9 +87,18 @@ class ImpostorCore:
         self.players[voted_out]["alive"] = False
         handle_vote_xp(self.votes, voted_out, self.impostors)
         self.votes.clear()
+        self.round += 1
+        self.log_event(
+            "vote_end",
+            {
+                "voted_out": voted_out,
+                "impostor": voted_out in self.impostors,
+                "round": self.round,
+            },
+        )
         return voted_out, f"{self.players[voted_out]['name']} was ejected!"
 
-    def check_game_over(self) -> Tuple[bool, str]:
+    def check_game_over(self) -> Tuple[bool, str, Optional[str]]:
         impostors_alive = len(
             [
                 uid
@@ -100,11 +115,37 @@ class ImpostorCore:
         )
         if impostors_alive == 0:
             award_win_bonus(self.players, self.impostors, "crewmates")
-            return True, "🎉 Crewmates win!"
+            return True, "🎉 Crewmates win!", "crewmates"
         if impostors_alive > crewmates_alive:
             award_win_bonus(self.players, self.impostors, "impostors")
-            return True, "💀 Impostor wins!"
-        return False, ""
+            return True, "💀 Impostor wins!", "impostors"
+        game_over, message, winner = (False, "", None)
+        impostors_alive = len(
+            [
+                uid
+                for uid in self.players
+                if uid in self.impostors and self.players[uid]["alive"]
+            ]
+        )
+        crewmates_alive = len(
+            [
+                uid
+                for uid in self.players
+                if uid not in self.impostors and self.players[uid]["alive"]
+            ]
+        )
+        if impostors_alive == 0:
+            award_win_bonus(self.players, self.impostors, "crewmates")
+            game_over, message, winner = True, "🎉 Crewmates win!", "crewmates"
+        if impostors_alive > crewmates_alive:
+            award_win_bonus(self.players, self.impostors, "impostors")
+            game_over, message, winner = True, "💀 Impostor wins!", "impostors"
+
+        if game_over:
+            self.log_event("game_over", {"winner": winner})
+            ai_chaos_events.cleanup_session_events(self.group_chat_id)
+
+        return game_over, message, winner
 
     def get_profile(self, user_id: int) -> Optional[Player]:
         db = SessionLocal()
@@ -126,3 +167,11 @@ class ImpostorCore:
         self.impostors.clear()
         self.phase = "waiting"
         self.votes = {}
+        self.round = 0
+        self.game_log = []
+
+    def log_event(self, event_type: str, data: Dict[str, Any]) -> None:
+        """Logs a game event for AI summary generation."""
+        self.game_log.append(
+            {"timestamp": self.round, "event_type": event_type, "data": data}
+        )

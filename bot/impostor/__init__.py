@@ -84,7 +84,7 @@ class ImpostorGame:
             self.core.discussion_history.append(
                 f"{self.core.players[user.id]['name']}: {text}"
             )
-            
+
             # Log discussion in database if we have a session ID
             if self.db_session_id:
                 try:
@@ -135,18 +135,25 @@ class ImpostorGame:
                 player.fake_tasks_done += 1
             player.title = calculate_title(player.xp)
             db.commit()
-            
+
             # Log task completion in database if we have a session ID
             if self.db_session_id:
                 try:
-                    task_type = "crewmate_task" if user.id not in self.core.impostors else "impostor_fake_task"
+                    task_type = (
+                        "crewmate_task"
+                        if user.id not in self.core.impostors
+                        else "impostor_fake_task"
+                    )
                     self.session_manager.log_task_completion(
-                        self.db_session_id, user.id, task_type, 
-                        f"Task completed by {user.first_name}", xp_gain
+                        self.db_session_id,
+                        user.id,
+                        task_type,
+                        f"Task completed by {user.first_name}",
+                        xp_gain,
                     )
                 except Exception as e:
                     print(f"Failed to log task completion: {e}")
-            
+
             msg = f"✅ {player.name} gained XP! New XP: {player.xp}, Title: {player.title}"
         else:
             msg = "⚠️ You're not in the DB. Use Join Game first."

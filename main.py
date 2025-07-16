@@ -24,7 +24,7 @@ from bot.handlers.topic_handlers import (
     create_topic_game_handler,
     show_available_games_handler,
     topic_message_handler,
-    callback_query_handler
+    callback_query_handler,
 )
 from bot.handlers.analytics_handlers import (
     show_player_stats,
@@ -33,7 +33,7 @@ from bot.handlers.analytics_handlers import (
     show_global_leaderboard,
     show_recent_games,
     show_analytics_menu,
-    handle_analytics_callback
+    handle_analytics_callback,
 )
 from bot.handlers.engagement_handlers import (
     show_engagement_summary_handler,
@@ -41,7 +41,7 @@ from bot.handlers.engagement_handlers import (
     show_missions_handler,
     show_flash_events_handler,
     show_cards_handler,
-    handle_engagement_callback
+    handle_engagement_callback,
 )
 from bot.handlers.ai_handlers import (
     ai_status_handler,
@@ -50,7 +50,7 @@ from bot.handlers.ai_handlers import (
     ai_chaos_handler,
     ai_lore_handler,
     ai_task_handler,
-    handle_ai_callback
+    handle_ai_callback,
 )
 from bot.topic_manager import topic_handler
 from bot.engagement import engagement_engine
@@ -59,8 +59,7 @@ import asyncio
 
 # Configure logging to show more information
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
 # Suppress only the most noisy loggers
@@ -87,7 +86,7 @@ async def startgame(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not msg:
         print("[WARNING] No message found in update")
         return
-    
+
     # Check if this is a forum/supergroup with topics
     chat = update.effective_chat
     if chat.is_forum:
@@ -97,13 +96,32 @@ async def startgame(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "This group supports **Topic-based Game Rooms** with **AI Game Master** features!\n\n"
             "**Choose an option:**",
             parse_mode=ParseMode.MARKDOWN,
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("🎮 Create New Game Room", callback_data="create_topic_game")],
-                [InlineKeyboardButton("📋 View Available Games", callback_data="show_available_games")],
-                [InlineKeyboardButton("🎯 Classic Mode", callback_data="classic_mode")],
-                [InlineKeyboardButton("🏠 My Basecamp", callback_data="show_basecamp")],
-                [InlineKeyboardButton("🤖 AI Features", callback_data="ai_status")]
-            ])
+            reply_markup=InlineKeyboardMarkup(
+                [
+                    [
+                        InlineKeyboardButton(
+                            "🎮 Create New Game Room", callback_data="create_topic_game"
+                        )
+                    ],
+                    [
+                        InlineKeyboardButton(
+                            "📋 View Available Games",
+                            callback_data="show_available_games",
+                        )
+                    ],
+                    [
+                        InlineKeyboardButton(
+                            "🎯 Classic Mode", callback_data="classic_mode"
+                        )
+                    ],
+                    [
+                        InlineKeyboardButton(
+                            "🏠 My Basecamp", callback_data="show_basecamp"
+                        )
+                    ],
+                    [InlineKeyboardButton("🤖 AI Features", callback_data="ai_status")],
+                ]
+            ),
         )
     else:
         # Fall back to classic mode
@@ -145,23 +163,31 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_id = query.from_user.id
         data = query.data
         chat_id = query.message.chat_id
-        
+
         print(f"[INFO] button_click: user={user_id}, data={data}, chat={chat_id}")
-        
+
         # First, try to handle topic-related callbacks
         if await callback_query_handler(update, context):
             return
-        
+
         # Handle AI callbacks
         if data.startswith("ai_"):
             await handle_ai_callback(update, context)
             return
-        
+
         # Handle engagement callbacks
-        if data.startswith(("engagement_", "show_basecamp", "show_missions", "show_flash", "show_cards")):
+        if data.startswith(
+            (
+                "engagement_",
+                "show_basecamp",
+                "show_missions",
+                "show_flash",
+                "show_cards",
+            )
+        ):
             await handle_engagement_callback(update, context)
             return
-        
+
         await query.answer()
         game_manager = get_game_manager(chat_id)
 
@@ -171,7 +197,7 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "🎮 **Classic Mode** - Single game per group\n\n"
                 "Use the menu below to play:",
                 parse_mode=ParseMode.MARKDOWN,
-                reply_markup=main_menu()
+                reply_markup=main_menu(),
             )
         elif data == "ai_status":
             print(f"[INFO] Showing AI status for user {user_id}")
@@ -217,6 +243,7 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         print(f"[ERROR] button_click exception: {e}")
         import traceback
+
         traceback.print_exc()
         msg = update.message or (
             update.callback_query and update.callback_query.message
@@ -229,9 +256,11 @@ async def handle_discussion(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     user_id = update.effective_user.id
     text = update.message.text
-    
-    print(f"[INFO] handle_discussion: chat={chat_id}, user={user_id}, text='{text[:50]}...'")
-    
+
+    print(
+        f"[INFO] handle_discussion: chat={chat_id}, user={user_id}, text='{text[:50]}...'"
+    )
+
     # Check if this is a topic message
     if update.message.is_topic_message:
         await topic_message_handler(update, context)
@@ -258,18 +287,19 @@ def start_periodic_cleanup():
         while True:
             # Clean up old game sessions
             topic_handler.topic_manager.cleanup_old_sessions(max_age_hours=6)
-            
+
             # Clean up engagement data
             engagement_engine.cleanup_old_data()
-            
+
             # Clean up AI data
             # This will be handled per session when games end
-            
+
             # Schedule flash events
             engagement_engine.flash_games_system.schedule_friday_night_event()
             engagement_engine.flash_games_system.schedule_mystery_hour_event()
-            
+
             await asyncio.sleep(3600)  # Run every hour
+
     asyncio.create_task(cleanup_loop())
 
 
@@ -277,17 +307,17 @@ def main():
     # Set up signal handlers for graceful shutdown
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
-    
+
     # Initialize database
     init_db()
-    
+
     # Recover active sessions from database
     print("[INFO] Recovering active sessions from database...")
     topic_handler.topic_manager.recover_active_sessions()
-    
+
     # Start periodic cleanup
     start_periodic_cleanup()
-    
+
     # Create the Application
     application = ApplicationBuilder().token(TOKEN).build()
 
@@ -299,6 +329,7 @@ def main():
     except Exception as e:
         print(f"❌ Database initialization failed: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 
@@ -307,6 +338,7 @@ def main():
     except Exception as e:
         print(f"❌ Failed to create bot application: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 
@@ -315,11 +347,11 @@ def main():
     application.add_handler(CommandHandler("startgame", startgame))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("about", about_command))
-    
+
     # Topic-based game commands
     application.add_handler(CommandHandler("creategame", create_game_command))
     application.add_handler(CommandHandler("joingames", join_games_command))
-    
+
     # Analytics commands
     application.add_handler(CommandHandler("stats", show_player_stats))
     application.add_handler(CommandHandler("leaderboard", show_session_leaderboard))
@@ -327,14 +359,16 @@ def main():
     application.add_handler(CommandHandler("global", show_global_leaderboard))
     application.add_handler(CommandHandler("recent", show_recent_games))
     application.add_handler(CommandHandler("analytics", show_analytics_menu))
-    
+
     # Engagement commands
     application.add_handler(CommandHandler("basecamp", show_basecamp_handler))
     application.add_handler(CommandHandler("missions", show_missions_handler))
     application.add_handler(CommandHandler("flash", show_flash_events_handler))
     application.add_handler(CommandHandler("cards", show_cards_handler))
-    application.add_handler(CommandHandler("engagement", show_engagement_summary_handler))
-    
+    application.add_handler(
+        CommandHandler("engagement", show_engagement_summary_handler)
+    )
+
     # AI commands
     application.add_handler(CommandHandler("ai", ai_status_handler))
     application.add_handler(CommandHandler("aistatus", ai_status_handler))
@@ -343,7 +377,7 @@ def main():
     application.add_handler(CommandHandler("aichaos", ai_chaos_handler))
     application.add_handler(CommandHandler("ailore", ai_lore_handler))
     application.add_handler(CommandHandler("aitask", ai_task_handler))
-    
+
     application.add_handler(CallbackQueryHandler(button_click))
     application.add_handler(
         MessageHandler(filters.TEXT & filters.ChatType.GROUPS, handle_discussion)
@@ -357,7 +391,9 @@ def main():
     print("🚀 Starting bot polling...")
     try:
         # Clear any existing webhooks and start polling
-        application.run_polling(drop_pending_updates=True, allowed_updates=Update.ALL_TYPES)
+        application.run_polling(
+            drop_pending_updates=True, allowed_updates=Update.ALL_TYPES
+        )
     except KeyboardInterrupt:
         print("\n🛑 Bot stopped by user.")
         sys.exit(0)
@@ -365,8 +401,9 @@ def main():
         error_msg = str(e)
         print(f"[ERROR] Polling exception: {error_msg}")
         import traceback
+
         traceback.print_exc()
-        
+
         if "Conflict" in error_msg:
             print("❌ Bot conflict detected: Another instance is already running.")
             print("💡 This is normal if the bot is deployed elsewhere.")

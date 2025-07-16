@@ -1,9 +1,12 @@
 # Future in-game events (sabotage, rewards, etc.) will go here.
-
-from typing import Dict, Set, Any
+import logging
+from typing import Dict, Set, Any, List
 from bot.database import SessionLocal
-from bot.database.models import Player
+from bot.database.models import Player, GameLog
 from bot.impostor.utils import calculate_title
+from bot.ai.llm_client import ai_client
+
+logger = logging.getLogger(__name__)
 
 
 def award_xp(user_id: int, amount: int, reason: str = "") -> None:
@@ -40,3 +43,28 @@ def handle_vote_xp(
             award_xp(voter_id, -5, "Voted out crewmate")
     if is_impostor:
         award_xp(voted_out_id, -10, "Ejected as impostor")
+
+
+async def generate_game_summary(game_log: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    Generates a game summary using the AI client.
+    """
+    try:
+        summary = await ai_client.generate_game_summary(game_log)
+        # Add to database
+        db = SessionLocal()
+        try:
+            db.add(GameLog(log_data=summary))
+            db.commit()
+        finally:
+            db.close()
+        return summary
+    except Exception as e:
+        logger.error(f"Error generating game summary: {e}")
+        return {
+            "winning_team": "unknown",
+            "narrative": "The game concluded, but the station's logs were corrupted.",
+            "mvp": {"name": "N/A", "reason": "Data unavailable"},
+            "notable_plays": [],
+            "final_verdict": "The true story may never be known.",
+        }

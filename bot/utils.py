@@ -11,9 +11,10 @@ TOKEN = os.getenv("BOT_TOKEN")
 
 # Initialize the Hugging Face client
 client = InferenceClient(
-    provider="hf-inference",
-    api_key=HF_API_KEY,
+    model="mistralai/Mistral-7B-Instruct-v0.1",
+    token=HF_API_KEY,
 )
+
 
 @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
 async def query_ai(prompt: str) -> str:
@@ -21,12 +22,7 @@ async def query_ai(prompt: str) -> str:
     try:
         completion = client.chat.completions.create(
             model="sarvamai/sarvam-m",  # Using the working model we found
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
+            messages=[{"role": "user", "content": prompt}],
         )
         return completion.choices[0].message.content
     except Exception as e:
@@ -43,12 +39,7 @@ def sync_generate_clue(player_names: List[str]) -> str:
     try:
         completion = client.chat.completions.create(
             model="sarvamai/sarvam-m",
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
+            messages=[{"role": "user", "content": prompt}],
         )
         return completion.choices[0].message.content
     except Exception as e:
