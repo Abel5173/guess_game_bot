@@ -15,18 +15,14 @@ client = InferenceClient(
     token=HF_API_KEY,
 )
 
+
 @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
 async def query_ai(prompt: str) -> str:
     """Query AI using Chat Completion API."""
     try:
         completion = client.chat.completions.create(
             model="sarvamai/sarvam-m",  # Using the working model we found
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
+            messages=[{"role": "user", "content": prompt}],
         )
         return completion.choices[0].message.content
     except Exception as e:
@@ -43,12 +39,7 @@ def sync_generate_clue(player_names: List[str]) -> str:
     try:
         completion = client.chat.completions.create(
             model="sarvamai/sarvam-m",
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
+            messages=[{"role": "user", "content": prompt}],
         )
         return completion.choices[0].message.content
     except Exception as e:

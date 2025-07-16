@@ -31,6 +31,9 @@ jobs:
       run: |
         PYTHONPATH=. python init_db.py
 
+    - name: Install black
+      run: pip install black
+
     - name: Check code formatting with black
       run: |
         black --check .
