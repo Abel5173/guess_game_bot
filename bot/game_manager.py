@@ -2,6 +2,7 @@ from typing import Dict, Optional
 from bot.impostor import ImpostorGame
 from bot.pulse_code import PulseCodeGame
 
+
 class GameManager:
     def __init__(self):
         self.games: Dict[int, object] = {}
@@ -32,6 +33,7 @@ class GameManager:
         if chat_id in self.games:
             del self.games[chat_id]
             del self.game_types[chat_id]
+
 
 # Global instance of the game manager
 game_manager = GameManager()

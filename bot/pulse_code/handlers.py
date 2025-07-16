@@ -5,6 +5,7 @@ from .core import PulseCodeGame
 # Dictionary to store game instances
 pulse_code_games = {}
 
+
 async def start_pulse_code_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Starts a new game of Pulse Code.
@@ -25,6 +26,7 @@ async def start_pulse_code_game(update: Update, context: ContextTypes.DEFAULT_TY
         "Pulse Code: Architect Protocol initiated.\n"
         "I have locked in my Pulse Code. Your turn to guess."
     )
+
 
 async def make_guess_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """

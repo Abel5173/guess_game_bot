@@ -4,6 +4,7 @@ from bot.database import SessionLocal
 from bot.database.models import PlayerPerformance
 from bot.ai.dynamic_difficulty import get_difficulty_level, get_ai_guess_strategy
 
+
 class PulseCodeGame:
     """
     Core logic for the Pulse Code game.
@@ -14,8 +15,12 @@ class PulseCodeGame:
         self.host_id: int = host_id
         self.chat_id: int = chat_id
         self.mode: str = mode
-        self.players: Dict[int, Dict] = {}  # {user_id: {name: str, code: str, stress: int}}
-        self.ai_opponents: Dict[str, Dict] = {}  # {ai_id: {name: str, code: str, stress: int}}
+        self.players: Dict[int, Dict] = (
+            {}
+        )  # {user_id: {name: str, code: str, stress: int}}
+        self.ai_opponents: Dict[str, Dict] = (
+            {}
+        )  # {ai_id: {name: str, code: str, stress: int}}
         self.game_started: bool = False
         self.turn_order: list = []
 
@@ -38,14 +43,15 @@ class PulseCodeGame:
             self.ai_opponents["AI-Calculon"] = {
                 "name": "Calculon",
                 "code": self._generate_pulse_code(),
-                "stress": 0
+                "stress": 0,
             }
         # Add more game modes here later
         self.game_started = True
         self.turn_order = list(self.players.keys()) + list(self.ai_opponents.keys())
 
-
-    def make_guess(self, player_id: int, target_id: str, guess: str) -> Tuple[int, int, int]:
+    def make_guess(
+        self, player_id: int, target_id: str, guess: str
+    ) -> Tuple[int, int, int]:
         """
         Processes a guess and returns the feedback (Hits, Flashes, Static).
         """
@@ -66,10 +72,14 @@ class PulseCodeGame:
         # Update stress levels
         self._update_stress(player_id, static)
 
-        self.players[player_id]["guesses"] = self.players[player_id].get("guesses", 0) + 1
+        self.players[player_id]["guesses"] = (
+            self.players[player_id].get("guesses", 0) + 1
+        )
 
         if hits == 4:
-            self._update_player_performance(player_id, won=True, guesses=self.players[player_id]["guesses"])
+            self._update_player_performance(
+                player_id, won=True, guesses=self.players[player_id]["guesses"]
+            )
 
         return hits, flashes, static
 
@@ -84,7 +94,9 @@ class PulseCodeGame:
     def _update_stress(self, player_id: int, static_count: int):
         """Increases stress based on the number of static digits in a guess."""
         if player_id in self.players:
-            self.players[player_id]["stress"] += static_count * 5  # Example stress calculation
+            self.players[player_id]["stress"] += (
+                static_count * 5
+            )  # Example stress calculation
         elif player_id in self.ai_opponents:
             self.ai_opponents[player_id]["stress"] += static_count * 5
 
@@ -99,7 +111,9 @@ class PulseCodeGame:
 
         if won:
             performance.wins += 1
-            total_guesses = (performance.average_guesses_to_win * (performance.wins -1)) + guesses
+            total_guesses = (
+                performance.average_guesses_to_win * (performance.wins - 1)
+            ) + guesses
             performance.average_guesses_to_win = total_guesses / performance.wins
             performance.skill_rating += 10
         else:
@@ -128,6 +142,6 @@ class PulseCodeGame:
         elif strategy == "logical":
             # Add a more logical guessing strategy here later
             return self._generate_pulse_code()
-        else: # aggressive
+        else:  # aggressive
             # Add a more aggressive guessing strategy here later
             return self._generate_pulse_code()

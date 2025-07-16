@@ -9,6 +9,7 @@ def get_difficulty_level(skill_rating: int) -> str:
     else:
         return "hard"
 
+
 def get_ai_guess_strategy(difficulty_level: str) -> str:
     """
     Determines the AI's guessing strategy based on the difficulty level.

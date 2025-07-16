@@ -1,6 +1,7 @@
 import unittest
 from bot.ai.dynamic_difficulty import get_difficulty_level, get_ai_guess_strategy
 
+
 class TestDynamicDifficulty(unittest.TestCase):
 
     def test_get_difficulty_level(self):
@@ -13,5 +14,6 @@ class TestDynamicDifficulty(unittest.TestCase):
         self.assertEqual(get_ai_guess_strategy("medium"), "logical")
         self.assertEqual(get_ai_guess_strategy("hard"), "aggressive")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()
