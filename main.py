@@ -18,7 +18,9 @@ from telegram.ext import (
 from bot.ui.buttons import main_menu
 from bot.database import init_db
 from dotenv import load_dotenv
-from bot.impostor import ImpostorGame  # Modularized Impostor Game import
+from bot.impostor import ImpostorGame
+from bot.pulse_code.handlers import start_pulse_code_game, make_guess_handler
+from bot.game_manager import game_manager
 from bot.constants import HELP_TEXT, ABOUT_TEXT
 from bot.handlers.topic_handlers import (
     create_topic_game_handler,
@@ -71,13 +73,7 @@ logging.getLogger("httpcore").setLevel(logging.WARNING)
 load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")
 
-games = {}  # chat_id: ImpostorGame instance
-
-
-def get_game_manager(chat_id):
-    if chat_id not in games:
-        games[chat_id] = ImpostorGame()
-    return games[chat_id]
+# The new game_manager object will handle all game instances
 
 
 async def startgame(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -126,8 +122,21 @@ async def startgame(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         # Fall back to classic mode
         await msg.reply_text(
-            "🎮 <b>Welcome! Use the menu below to play:</b>",
-            reply_markup=main_menu(),
+            "🎮 <b>Welcome! Choose a game to play:</b>",
+            reply_markup=InlineKeyboardMarkup(
+                [
+                    [
+                        InlineKeyboardButton(
+                            "🕵️ Impostor Game", callback_data="select_impostor"
+                        )
+                    ],
+                    [
+                        InlineKeyboardButton(
+                            "📟 Pulse Code", callback_data="select_pulse_code"
+                        )
+                    ],
+                ]
+            ),
             parse_mode=ParseMode.HTML,
         )
     print("[INFO] startgame response sent")
@@ -189,50 +198,67 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         await query.answer()
-        game_manager = get_game_manager(chat_id)
 
-        if data == "classic_mode":
-            print(f"[INFO] Switching to classic mode for user {user_id}")
+        if data == "select_impostor":
+            game_manager.start_new_game(chat_id, "impostor", user_id)
             await query.message.reply_text(
-                "🎮 **Classic Mode** - Single game per group\n\n"
-                "Use the menu below to play:",
-                parse_mode=ParseMode.MARKDOWN,
+                "Impostor game selected. Use /join to join the game.",
                 reply_markup=main_menu(),
             )
-        elif data == "ai_status":
-            print(f"[INFO] Showing AI status for user {user_id}")
-            await ai_status_handler(update, context)
-        elif data == "join_game":
-            print(f"[INFO] Processing join_game for user {user_id}")
-            await game_manager.handle_join_game(update, context)
-            await query.message.reply_text("🎮 Main Menu:", reply_markup=main_menu())
-        elif data == "complete_task":
-            print(f"[INFO] Processing complete_task for user {user_id}")
-            await game_manager.handle_complete_task(update, context)
-            await query.message.reply_text("🎮 Main Menu:", reply_markup=main_menu())
-        elif data == "start_voting":
-            print(f"[INFO] Processing start_voting for user {user_id}")
-            await game_manager.handle_start_voting(update, context)
-        elif data == "view_profile":
-            print(f"[INFO] Processing view_profile for user {user_id}")
-            await game_manager.show_profile(update)
-            await query.message.reply_text("🎮 Main Menu:", reply_markup=main_menu())
-        elif data == "leaderboard":
-            print(f"[INFO] Processing leaderboard for user {user_id}")
-            await game_manager.show_leaderboard(update)
-            await query.message.reply_text("🎮 Main Menu:", reply_markup=main_menu())
-        elif data == "restart_game":
-            print(f"[INFO] Processing restart_game for user {user_id}")
-            await game_manager.reset(update)
-            await query.message.reply_text(
-                "Game reset. 🎮 Main Menu:", reply_markup=main_menu()
-            )
-        elif data.startswith("vote_") or data == "vote_skip":
-            print(f"[INFO] Processing vote for user {user_id}: {data}")
-            await game_manager.handle_vote(update, context)
-        elif data == "show_rules":
-            print(f"[INFO] Processing show_rules for user {user_id}")
-            await game_manager.show_rules(update)
+            return
+
+        if data == "select_pulse_code":
+            game_manager.start_new_game(chat_id, "pulse_code", user_id)
+            await start_pulse_code_game(update, context)
+            return
+
+        game = game_manager.get_game(chat_id)
+        game_type = game_manager.get_game_type(chat_id)
+
+        if not game:
+            await query.message.reply_text("No active game. Use /startgame to begin.")
+            return
+
+        if game_type == "impostor":
+            if data == "join_game":
+                print(f"[INFO] Processing join_game for user {user_id}")
+                await game.handle_join_game(update, context)
+                await query.message.reply_text(
+                    "🎮 Main Menu:", reply_markup=main_menu()
+                )
+            elif data == "complete_task":
+                print(f"[INFO] Processing complete_task for user {user_id}")
+                await game.handle_complete_task(update, context)
+                await query.message.reply_text(
+                    "🎮 Main Menu:", reply_markup=main_menu()
+                )
+            elif data == "start_voting":
+                print(f"[INFO] Processing start_voting for user {user_id}")
+                await game.handle_start_voting(update, context)
+            elif data == "view_profile":
+                print(f"[INFO] Processing view_profile for user {user_id}")
+                await game.show_profile(update)
+                await query.message.reply_text(
+                    "🎮 Main Menu:", reply_markup=main_menu()
+                )
+            elif data == "leaderboard":
+                print(f"[INFO] Processing leaderboard for user {user_id}")
+                await game.show_leaderboard(update)
+                await query.message.reply_text(
+                    "🎮 Main Menu:", reply_markup=main_menu()
+                )
+            elif data == "restart_game":
+                print(f"[INFO] Processing restart_game for user {user_id}")
+                game_manager.end_game(chat_id)
+                await query.message.reply_text(
+                    "Game reset. 🎮 Main Menu:", reply_markup=main_menu()
+                )
+            elif data.startswith("vote_") or data == "vote_skip":
+                print(f"[INFO] Processing vote for user {user_id}: {data}")
+                await game.handle_vote(update, context)
+            elif data == "show_rules":
+                print(f"[INFO] Processing show_rules for user {user_id}")
+                await game.show_rules(update)
         elif data.startswith("analytics_"):
             print(f"[INFO] Processing analytics callback for user {user_id}: {data}")
             await handle_analytics_callback(update, context)
@@ -266,8 +292,9 @@ async def handle_discussion(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await topic_message_handler(update, context)
     else:
         # Classic mode
-        game_manager = get_game_manager(chat_id)
-        await game_manager.handle_discussion(update, context)
+        game = game_manager.get_game(chat_id)
+        if game and game_manager.get_game_type(chat_id) == "impostor":
+            await game.handle_discussion(update, context)
 
 
 async def start_private(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -347,6 +374,8 @@ def main():
     application.add_handler(CommandHandler("startgame", startgame))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("about", about_command))
+    application.add_handler(CommandHandler("pulse", start_pulse_code_game))
+    application.add_handler(CommandHandler("guess", make_guess_handler))
 
     # Topic-based game commands
     application.add_handler(CommandHandler("creategame", create_game_command))
