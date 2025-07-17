@@ -106,6 +106,7 @@ class PlayerGameLink(Base):
 
     # Relationships
     player = relationship("Player")
+    session = relationship("GameSession", back_populates="players")
 
 
 class PlayerPerformance(Base):
@@ -119,7 +120,6 @@ class PlayerPerformance(Base):
     skill_rating = Column(Integer, default=1000)  # Elo-style rating
 
     player = relationship("Player")
-    session = relationship("GameSession", back_populates="players")
 
 
 class VoteHistory(Base):

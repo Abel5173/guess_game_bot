@@ -106,7 +106,13 @@ class PulseCodeGame:
         performance = db.query(PlayerPerformance).filter_by(player_id=player_id).first()
 
         if not performance:
-            performance = PlayerPerformance(player_id=player_id)
+            performance = PlayerPerformance(
+                player_id=player_id,
+                wins=0,
+                losses=0,
+                average_guesses_to_win=0,
+                skill_rating=1000,
+            )
             db.add(performance)
 
         if won:
