@@ -29,7 +29,11 @@ jobs:
 
     - name: Initialize database
       run: |
+        sudo service redis-server start
         PYTHONPATH=. python init_db.py
+
+    - name: Install black
+      run: pip install black
 
     - name: Check code formatting with black
       run: |

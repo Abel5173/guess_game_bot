@@ -109,19 +109,6 @@ class PlayerGameLink(Base):
     session = relationship("GameSession", back_populates="players")
 
 
-class PlayerPerformance(Base):
-    __tablename__ = "player_performance"
-
-    id = Column(Integer, primary_key=True, index=True)
-    player_id = Column(Integer, ForeignKey("players.id"), unique=True, index=True)
-    wins = Column(Integer, default=0)
-    losses = Column(Integer, default=0)
-    average_guesses_to_win = Column(Integer, default=0)
-    skill_rating = Column(Integer, default=1000)  # Elo-style rating
-
-    player = relationship("Player")
-
-
 class VoteHistory(Base):
     """Track voting history for analytics"""
 
