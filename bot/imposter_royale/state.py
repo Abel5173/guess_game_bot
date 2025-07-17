@@ -1,6 +1,7 @@
 # This will handle the game state, including player status, roles, and game room data.
 import redis
 
+
 class GameState:
     def __init__(self, chat_id):
         self.r = redis.Redis(decode_responses=True)

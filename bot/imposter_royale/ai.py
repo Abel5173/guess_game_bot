@@ -1,6 +1,7 @@
 # This will handle the AI integration, including generating roleplay, analyzing behavior, and simulating expressions.
 from bot.ai.llm_client import ai_client
 
+
 class AIManager:
     async def generate_bio(self, player_name, role):
         prompt = f"Create a unique character bio for {player_name} who is a {role} in a high-stakes deception game."

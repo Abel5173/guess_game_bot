@@ -4,6 +4,7 @@ from .state import GameState
 from .player import Player
 from .ai import AIManager
 
+
 class ImposterRoyaleGame:
     def __init__(self, chat_id):
         self.chat_id = chat_id

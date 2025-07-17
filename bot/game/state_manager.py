@@ -11,14 +11,18 @@ r = redis.Redis(decode_responses=True)
 Session = sessionmaker(bind=engine)
 session = Session()
 
+
 def get_game_state(chat_id):
     return r.hgetall(f"game:{chat_id}")
+
 
 def update_game_state(chat_id, data):
     r.hmset(f"game:{chat_id}", data)
 
+
 def get_player_state(chat_id, user_id):
     return r.hgetall(f"game:{chat_id}:player:{user_id}")
+
 
 def update_player_state(chat_id, user_id, data):
     r.hmset(f"game:{chat_id}:player:{user_id}", data)
