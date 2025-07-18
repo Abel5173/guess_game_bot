@@ -8,8 +8,11 @@ from .ai import AIManager
 class ImposterRoyaleGame:
     def __init__(self, chat_id):
         self.chat_id = chat_id
-        self.state = GameState(chat_id)
+        self.state = None
         self.ai_manager = AIManager()
+
+    async def initialize(self):
+        self.state = await GameState.create(self.chat_id)
 
     async def start_game(self):
         # Logic to start the game, assign roles, etc.
