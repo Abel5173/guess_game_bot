@@ -145,6 +145,14 @@ class StatusSystem:
             }
         return None
 
+    def cleanup_expired_seasonal_titles(self):
+        """Cleanup expired seasonal/limited titles. (No expiration logic implemented yet.)"""
+        logger.debug(
+            "cleanup_expired_seasonal_titles called, but no expiration logic implemented."
+        )
+        # If you add expiration dates to limited_titles, implement removal logic here.
+        pass
+
 
 # Global instance
 status_system = StatusSystem()

@@ -52,10 +52,27 @@ from bot.handlers.ai_handlers import (
     ai_task_handler,
     handle_ai_callback,
 )
+from bot.handlers.pulse_code_handlers import (
+    start_pulse_code,
+    start_dual_operative_game,
+    start_triple_threat_game,
+    guess_pulse_code,
+    mind_link,
+    desperation_gambit,
+    pulse_code_status,
+    end_pulse_code,
+    feedback,
+    join_pulse_code,
+    leave_pulse_code,
+    pulse_code_players,
+)
 from bot.topic_manager import topic_handler
 from bot.engagement import engagement_engine
 from bot.ai import ai_game_engine
 import asyncio
+from bot.handlers.menu import menu_handler
+from bot.pulse_code import PulseCodeGame
+from telegram.error import TimedOut, NetworkError
 
 # Configure logging to show more information
 logging.basicConfig(
@@ -84,54 +101,7 @@ def get_game_manager(chat_id):
 
 async def startgame(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.info(f"startgame called by user {update.effective_user.id}")
-    msg = update.message or (update.callback_query and update.callback_query.message)
-    if not msg:
-        logger.warning("No message found in update")
-        return
-
-    # Check if this is a forum/supergroup with topics
-    chat = update.effective_chat
-    if chat.is_forum:
-        logger.debug("Forum detected, showing topic-based game options")
-        await msg.reply_text(
-            "🎮 **Welcome to the AI-Powered Impostor Game!**\n\n"
-            "This group supports **Topic-based Game Rooms** with **AI Game Master** features!\n\n"
-            "**Choose an option:**",
-            parse_mode=ParseMode.MARKDOWN,
-            reply_markup=InlineKeyboardMarkup(
-                [
-                    [
-                        InlineKeyboardButton(
-                            "🎮 Create New Game Room", callback_data="create_topic_game"
-                        )
-                    ],
-                    [
-                        InlineKeyboardButton(
-                            "📋 View Available Games",
-                            callback_data="show_available_games",
-                        )
-                    ],
-                    [
-                        InlineKeyboardButton(
-                            "🎯 Classic Mode", callback_data="classic_mode"
-                        )
-                    ],
-                    [
-                        InlineKeyboardButton(
-                            "🏠 My Basecamp", callback_data="show_basecamp"
-                        )
-                    ],
-                    [InlineKeyboardButton("🤖 AI Features", callback_data="ai_status")],
-                ]
-            ),
-        )
-    else:
-        logger.debug("Non-forum chat, falling back to classic mode")
-        await msg.reply_text(
-            "🎮 <b>Welcome! Use the menu below to play:</b>",
-            reply_markup=main_menu(),
-            parse_mode=ParseMode.HTML,
-        )
+    await menu_handler(update, context)
     logger.info("startgame response sent")
 
 
@@ -238,6 +208,13 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
         elif data.startswith("analytics_"):
             logger.debug(f"Processing analytics callback for user {user_id}: {data}")
             await handle_analytics_callback(update, context)
+        elif data == "choose_pulse_code":
+            # Start Pulse Code flow
+            logger.info("User selected Pulse Code")
+            # Placeholder: Start Pulse Code game (implement full flow in next steps)
+            await query.message.reply_text(
+                "💡 Pulse Code game coming soon! (or implement start logic here)"
+            )
         else:
             logger.warning(f"Unknown button data: {data}")
             await query.message.reply_text("Unknown action.", reply_markup=main_menu())
@@ -279,30 +256,28 @@ async def start_private(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.info("start_private response sent")
 
 
+async def error_handler(update, context):
+    try:
+        raise context.error
+    except TimedOut:
+        logger.warning("Telegram API timed out. Retrying...")
+    except NetworkError:
+        logger.warning("Network error. Check your connection.")
+    except Exception as e:
+        logger.error(f"Unhandled error: {e}")
+
+
 def signal_handler(signum, frame):
     logger.info("\n🛑 Bot shutdown requested. Exiting gracefully...")
     sys.exit(0)
 
 
-def start_periodic_cleanup():
-    async def cleanup_loop():
-        while True:
-            # Clean up old game sessions
-            topic_handler.topic_manager.cleanup_old_sessions(max_age_hours=6)
-
-            # Clean up engagement data
-            engagement_engine.cleanup_old_data()
-
-            # Clean up AI data
-            # This will be handled per session when games end
-
-            # Schedule flash events
-            engagement_engine.flash_games_system.schedule_friday_night_event()
-            engagement_engine.flash_games_system.schedule_mystery_hour_event()
-
-            await asyncio.sleep(3600)  # Run every hour
-
-    asyncio.create_task(cleanup_loop())
+async def cleanup_job(context):
+    # context.application is available here
+    topic_handler.topic_manager.cleanup_old_sessions(max_age_hours=6)
+    engagement_engine.cleanup_old_data()
+    engagement_engine.flash_games_system.schedule_friday_night_event()
+    engagement_engine.flash_games_system.schedule_mystery_hour_event()
 
 
 def main():
@@ -316,9 +291,6 @@ def main():
     # Recover active sessions from database
     logger.info("Recovering active sessions from database...")
     topic_handler.topic_manager.recover_active_sessions()
-
-    # Start periodic cleanup
-    start_periodic_cleanup()
 
     # Create the Application
     application = ApplicationBuilder().token(TOKEN).build()
@@ -351,6 +323,7 @@ def main():
     application.add_handler(CommandHandler("startgame", startgame))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("about", about_command))
+    application.add_handler(CommandHandler("menu", menu_handler))
 
     # Topic-based game commands
     application.add_handler(CommandHandler("creategame", create_game_command))
@@ -369,9 +342,7 @@ def main():
     application.add_handler(CommandHandler("missions", show_missions_handler))
     application.add_handler(CommandHandler("flash", show_flash_events_handler))
     application.add_handler(CommandHandler("cards", show_cards_handler))
-    application.add_handler(
-        CommandHandler("engagement", show_engagement_summary_handler)
-    )
+    application.add_handler(CommandHandler("engagement", show_engagement_summary_handler))
 
     # AI commands
     application.add_handler(CommandHandler("ai", ai_status_handler))
@@ -382,10 +353,22 @@ def main():
     application.add_handler(CommandHandler("ailore", ai_lore_handler))
     application.add_handler(CommandHandler("aitask", ai_task_handler))
 
+    application.add_handler(CommandHandler("start_pulse_code", start_pulse_code))
+    application.add_handler(CommandHandler("guess", guess_pulse_code))
+    application.add_handler(CommandHandler("mind_link", mind_link))
+    application.add_handler(CommandHandler("desperation_gambit", desperation_gambit))
+    application.add_handler(CommandHandler("my_stress", pulse_code_status))
+    application.add_handler(CommandHandler("end_pulse_code", end_pulse_code))
+    application.add_handler(CommandHandler("start_dual_operative_game", start_dual_operative_game))
+    application.add_handler(CommandHandler("start_triple_threat_game", start_triple_threat_game))
+    application.add_handler(CommandHandler("feedback", feedback))
+    application.add_handler(CommandHandler("join_pulse_code", join_pulse_code))
+    application.add_handler(CommandHandler("leave_pulse_code", leave_pulse_code))
+    application.add_handler(CommandHandler("pulse_code_players", pulse_code_players))
+
     application.add_handler(CallbackQueryHandler(button_click))
-    application.add_handler(
-        MessageHandler(filters.TEXT & filters.ChatType.GROUPS, handle_discussion)
-    )
+    application.add_handler(MessageHandler(filters.TEXT & filters.ChatType.GROUPS, handle_discussion))
+    application.add_error_handler(error_handler)
 
     logger.info("✅ Handlers configured")
     logger.info("🤖 AI Features enabled:")
@@ -395,6 +378,7 @@ def main():
     logger.info("🚀 Starting bot polling...")
     try:
         # Clear any existing webhooks and start polling
+        application.job_queue.run_repeating(cleanup_job, interval=3600, first=0)
         application.run_polling(
             drop_pending_updates=True, allowed_updates=Update.ALL_TYPES
         )
