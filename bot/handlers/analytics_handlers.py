@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 async def show_player_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show comprehensive stats for the current player."""
+    logger.info(f"show_player_stats called by user {update.effective_user.id}")
     user = update.effective_user
 
     with AnalyticsManager() as analytics:
@@ -223,8 +224,10 @@ async def show_analytics_menu(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 async def handle_analytics_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle analytics callback queries."""
+    logger.info(f"handle_analytics_callback called by user {update.effective_user.id}")
     query = update.callback_query
     await query.answer()
+    logger.debug(f"Analytics callback data: {query.data}")
 
     if query.data == "analytics_my_stats":
         # Create a mock update for the stats command

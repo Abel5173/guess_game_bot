@@ -17,6 +17,7 @@ class AITaskGenerator:
     """AI-powered task generation system."""
 
     def __init__(self):
+        logger.debug("Initializing AITaskGenerator")
         self.task_history = {}  # session_id -> [task_data]
         self.player_task_progress = {}  # session_id -> {player_id -> progress}
         self.task_templates = {
@@ -129,6 +130,9 @@ class AITaskGenerator:
         self, session_id: int, player_id: int, role: str, difficulty: str = None
     ) -> Dict:
         """Generate a unique AI task for a player."""
+        logger.info(
+            f"generate_task called with session_id={session_id}, player_id={player_id}, role={role}, difficulty={difficulty}"
+        )
         # Get player info
         db = SessionLocal()
         try:
@@ -176,7 +180,7 @@ class AITaskGenerator:
 
         self.player_task_progress[session_id][player_id]["tasks_assigned"] += 1
 
-        logger.info(f"Generated {difficulty} {role} task for {player_name}")
+        logger.info(f"Generated task for player {player_id} in session {session_id}")
 
         return task_data
 
@@ -197,7 +201,11 @@ class AITaskGenerator:
         self, session_id: int, player_id: int, task_id: str
     ) -> Tuple[bool, int]:
         """Mark a task as completed and award XP."""
+        logger.debug(
+            f"complete_task called with session_id={session_id}, player_id={player_id}, task_id={task_id}"
+        )
         if session_id not in self.task_history:
+            logger.warning(f"Session {session_id} not found in task history.")
             return False, 0
 
         # Find the task
@@ -212,6 +220,9 @@ class AITaskGenerator:
                 break
 
         if not task:
+            logger.warning(
+                f"Task with ID {task_id} not found for player {player_id} in session {session_id} or already completed."
+            )
             return False, 0
 
         # Mark as completed
@@ -240,7 +251,11 @@ class AITaskGenerator:
 
     def get_player_tasks(self, session_id: int, player_id: int) -> List[Dict]:
         """Get all tasks for a player in a session."""
+        logger.debug(
+            f"get_player_tasks called with session_id={session_id}, player_id={player_id}"
+        )
         if session_id not in self.task_history:
+            logger.warning(f"Session {session_id} not found in task history.")
             return []
 
         return [
@@ -251,15 +266,24 @@ class AITaskGenerator:
 
     def get_active_tasks(self, session_id: int, player_id: int) -> List[Dict]:
         """Get active (incomplete) tasks for a player."""
+        logger.debug(
+            f"get_active_tasks called with session_id={session_id}, player_id={player_id}"
+        )
         tasks = self.get_player_tasks(session_id, player_id)
         return [task for task in tasks if not task["completed"]]
 
     def get_task_progress(self, session_id: int, player_id: int) -> Dict:
         """Get task progress statistics for a player."""
+        logger.debug(
+            f"get_task_progress called with session_id={session_id}, player_id={player_id}"
+        )
         if (
             session_id not in self.player_task_progress
             or player_id not in self.player_task_progress[session_id]
         ):
+            logger.warning(
+                f"Player {player_id} in session {session_id} not found in player task progress."
+            )
             return {
                 "tasks_assigned": 0,
                 "tasks_completed": 0,
@@ -278,6 +302,9 @@ class AITaskGenerator:
 
     def generate_task_summary(self, session_id: int, player_id: int) -> str:
         """Generate a summary of player's task performance."""
+        logger.debug(
+            f"generate_task_summary called with session_id={session_id}, player_id={player_id}"
+        )
         progress = self.get_task_progress(session_id, player_id)
         active_tasks = self.get_active_tasks(session_id, player_id)
 
@@ -295,6 +322,9 @@ class AITaskGenerator:
 
     def _determine_difficulty(self, session_id: int, player_id: int) -> str:
         """Determine task difficulty based on player performance and game state."""
+        logger.debug(
+            f"_determine_difficulty called with session_id={session_id}, player_id={player_id}"
+        )
         progress = self.get_task_progress(session_id, player_id)
 
         # Base difficulty on completion rate
@@ -309,6 +339,9 @@ class AITaskGenerator:
 
     def _calculate_xp_reward(self, difficulty: str, role: str) -> int:
         """Calculate XP reward for task completion."""
+        logger.debug(
+            f"_calculate_xp_reward called with difficulty={difficulty}, role={role}"
+        )
         base_rewards = {"easy": 10, "medium": 25, "hard": 50}
 
         base_xp = base_rewards.get(difficulty, 10)
@@ -321,6 +354,9 @@ class AITaskGenerator:
 
     def _log_task_completion(self, session_id: int, player_id: int, task: Dict):
         """Log task completion to database."""
+        logger.debug(
+            f"_log_task_completion called with session_id={session_id}, player_id={player_id}"
+        )
         db = SessionLocal()
         try:
             task_log = TaskLog(
@@ -341,6 +377,7 @@ class AITaskGenerator:
 
     def cleanup_session_tasks(self, session_id: int):
         """Clean up task data for a finished session."""
+        logger.debug(f"cleanup_session_tasks called with session_id={session_id}")
         if session_id in self.task_history:
             del self.task_history[session_id]
 

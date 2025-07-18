@@ -59,8 +59,10 @@ import asyncio
 
 # Configure logging to show more information
 logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
 )
+logger = logging.getLogger(__name__)
 
 # Suppress only the most noisy loggers
 logging.getLogger("telegram.ext._utils.networkloop").setLevel(logging.WARNING)
@@ -81,16 +83,16 @@ def get_game_manager(chat_id):
 
 
 async def startgame(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print(f"[INFO] startgame called by user {update.effective_user.id}")
+    logger.info(f"startgame called by user {update.effective_user.id}")
     msg = update.message or (update.callback_query and update.callback_query.message)
     if not msg:
-        print("[WARNING] No message found in update")
+        logger.warning("No message found in update")
         return
 
     # Check if this is a forum/supergroup with topics
     chat = update.effective_chat
     if chat.is_forum:
-        # Show topic-based game options
+        logger.debug("Forum detected, showing topic-based game options")
         await msg.reply_text(
             "🎮 **Welcome to the AI-Powered Impostor Game!**\n\n"
             "This group supports **Topic-based Game Rooms** with **AI Game Master** features!\n\n"
@@ -124,36 +126,36 @@ async def startgame(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ),
         )
     else:
-        # Fall back to classic mode
+        logger.debug("Non-forum chat, falling back to classic mode")
         await msg.reply_text(
             "🎮 <b>Welcome! Use the menu below to play:</b>",
             reply_markup=main_menu(),
             parse_mode=ParseMode.HTML,
         )
-    print("[INFO] startgame response sent")
+    logger.info("startgame response sent")
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print(f"[INFO] help_command called by user {update.effective_user.id}")
+    logger.info(f"help_command called by user {update.effective_user.id}")
     await update.message.reply_text(HELP_TEXT, parse_mode=ParseMode.HTML)
-    print("[INFO] help response sent")
+    logger.info("help response sent")
 
 
 async def about_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print(f"[INFO] about_command called by user {update.effective_user.id}")
+    logger.info(f"about_command called by user {update.effective_user.id}")
     await update.message.reply_text(ABOUT_TEXT, parse_mode=ParseMode.HTML)
-    print("[INFO] about response sent")
+    logger.info("about response sent")
 
 
 async def create_game_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Command to create a new topic-based game."""
-    print(f"[INFO] create_game called by user {update.effective_user.id}")
+    logger.info(f"create_game called by user {update.effective_user.id}")
     await create_topic_game_handler(update, context)
 
 
 async def join_games_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Command to show available games to join."""
-    print(f"[INFO] join_games called by user {update.effective_user.id}")
+    logger.info(f"join_games called by user {update.effective_user.id}")
     await show_available_games_handler(update, context)
 
 
@@ -164,7 +166,7 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
         data = query.data
         chat_id = query.message.chat_id
 
-        print(f"[INFO] button_click: user={user_id}, data={data}, chat={chat_id}")
+        logger.debug(f"button_click: user={user_id}, data={data}, chat={chat_id}")
 
         # First, try to handle topic-related callbacks
         if await callback_query_handler(update, context):
@@ -192,7 +194,7 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
         game_manager = get_game_manager(chat_id)
 
         if data == "classic_mode":
-            print(f"[INFO] Switching to classic mode for user {user_id}")
+            logger.debug(f"Switching to classic mode for user {user_id}")
             await query.message.reply_text(
                 "🎮 **Classic Mode** - Single game per group\n\n"
                 "Use the menu below to play:",
@@ -200,48 +202,48 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 reply_markup=main_menu(),
             )
         elif data == "ai_status":
-            print(f"[INFO] Showing AI status for user {user_id}")
+            logger.debug(f"Showing AI status for user {user_id}")
             await ai_status_handler(update, context)
         elif data == "join_game":
-            print(f"[INFO] Processing join_game for user {user_id}")
+            logger.debug(f"Processing join_game for user {user_id}")
             await game_manager.handle_join_game(update, context)
             await query.message.reply_text("🎮 Main Menu:", reply_markup=main_menu())
         elif data == "complete_task":
-            print(f"[INFO] Processing complete_task for user {user_id}")
+            logger.debug(f"Processing complete_task for user {user_id}")
             await game_manager.handle_complete_task(update, context)
             await query.message.reply_text("🎮 Main Menu:", reply_markup=main_menu())
         elif data == "start_voting":
-            print(f"[INFO] Processing start_voting for user {user_id}")
+            logger.debug(f"Processing start_voting for user {user_id}")
             await game_manager.handle_start_voting(update, context)
         elif data == "view_profile":
-            print(f"[INFO] Processing view_profile for user {user_id}")
+            logger.debug(f"Processing view_profile for user {user_id}")
             await game_manager.show_profile(update)
             await query.message.reply_text("🎮 Main Menu:", reply_markup=main_menu())
         elif data == "leaderboard":
-            print(f"[INFO] Processing leaderboard for user {user_id}")
+            logger.debug(f"Processing leaderboard for user {user_id}")
             await game_manager.show_leaderboard(update)
             await query.message.reply_text("🎮 Main Menu:", reply_markup=main_menu())
         elif data == "restart_game":
-            print(f"[INFO] Processing restart_game for user {user_id}")
+            logger.debug(f"Processing restart_game for user {user_id}")
             await game_manager.reset(update)
             await query.message.reply_text(
                 "Game reset. 🎮 Main Menu:", reply_markup=main_menu()
             )
         elif data.startswith("vote_") or data == "vote_skip":
-            print(f"[INFO] Processing vote for user {user_id}: {data}")
+            logger.debug(f"Processing vote for user {user_id}: {data}")
             await game_manager.handle_vote(update, context)
         elif data == "show_rules":
-            print(f"[INFO] Processing show_rules for user {user_id}")
+            logger.debug(f"Processing show_rules for user {user_id}")
             await game_manager.show_rules(update)
         elif data.startswith("analytics_"):
-            print(f"[INFO] Processing analytics callback for user {user_id}: {data}")
+            logger.debug(f"Processing analytics callback for user {user_id}: {data}")
             await handle_analytics_callback(update, context)
         else:
-            print(f"[WARNING] Unknown button data: {data}")
+            logger.warning(f"Unknown button data: {data}")
             await query.message.reply_text("Unknown action.", reply_markup=main_menu())
 
     except Exception as e:
-        print(f"[ERROR] button_click exception: {e}")
+        logger.error(f"button_click exception: {e}")
         import traceback
 
         traceback.print_exc()
@@ -257,8 +259,8 @@ async def handle_discussion(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     text = update.message.text
 
-    print(
-        f"[INFO] handle_discussion: chat={chat_id}, user={user_id}, text='{text[:50]}...'"
+    logger.debug(
+        f"handle_discussion: chat={chat_id}, user={user_id}, text='{text[:50]}...'"
     )
 
     # Check if this is a topic message
@@ -272,13 +274,13 @@ async def handle_discussion(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def start_private(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    print(f"[INFO] start_private called by user {user_id}")
+    logger.info(f"start_private called by user {user_id}")
     await update.message.reply_text("👋 Use /startgame in a group to begin!")
-    print("[INFO] start_private response sent")
+    logger.info("start_private response sent")
 
 
 def signal_handler(signum, frame):
-    print("\n🛑 Bot shutdown requested. Exiting gracefully...")
+    logger.info("\n🛑 Bot shutdown requested. Exiting gracefully...")
     sys.exit(0)
 
 
@@ -312,7 +314,7 @@ def main():
     init_db()
 
     # Recover active sessions from database
-    print("[INFO] Recovering active sessions from database...")
+    logger.info("Recovering active sessions from database...")
     topic_handler.topic_manager.recover_active_sessions()
 
     # Start periodic cleanup
@@ -321,22 +323,24 @@ def main():
     # Create the Application
     application = ApplicationBuilder().token(TOKEN).build()
 
-    print("🤖 Starting AI-Powered Smart Game Bot...")
-    print(f"[INFO] BOT_TOKEN: {TOKEN[:10]}..." if TOKEN else "[ERROR] BOT_TOKEN: None")
+    logger.info("🤖 Starting AI-Powered Smart Game Bot...")
+    logger.info(
+        f"[INFO] BOT_TOKEN: {TOKEN[:10]}..." if TOKEN else "[ERROR] BOT_TOKEN: None"
+    )
 
     try:
-        print("✅ Database initialized")
+        logger.info("✅ Database initialized")
     except Exception as e:
-        print(f"❌ Database initialization failed: {e}")
+        logger.error(f"❌ Database initialization failed: {e}")
         import traceback
 
         traceback.print_exc()
         sys.exit(1)
 
     try:
-        print("✅ Bot application created")
+        logger.info("✅ Bot application created")
     except Exception as e:
-        print(f"❌ Failed to create bot application: {e}")
+        logger.error(f"❌ Failed to create bot application: {e}")
         import traceback
 
         traceback.print_exc()
@@ -383,40 +387,42 @@ def main():
         MessageHandler(filters.TEXT & filters.ChatType.GROUPS, handle_discussion)
     )
 
-    print("✅ Handlers configured")
-    print("🤖 AI Features enabled:")
+    logger.info("✅ Handlers configured")
+    logger.info("🤖 AI Features enabled:")
     for feature in ai_game_engine.get_enabled_features():
-        print(f"   • {feature.replace('_', ' ').title()}")
+        logger.info(f"   • {feature.replace('_', ' ').title()}")
 
-    print("🚀 Starting bot polling...")
+    logger.info("🚀 Starting bot polling...")
     try:
         # Clear any existing webhooks and start polling
         application.run_polling(
             drop_pending_updates=True, allowed_updates=Update.ALL_TYPES
         )
     except KeyboardInterrupt:
-        print("\n🛑 Bot stopped by user.")
+        logger.info("\n🛑 Bot stopped by user.")
         sys.exit(0)
     except Exception as e:
         error_msg = str(e)
-        print(f"[ERROR] Polling exception: {error_msg}")
+        logger.error(f"[ERROR] Polling exception: {error_msg}")
         import traceback
 
         traceback.print_exc()
 
         if "Conflict" in error_msg:
-            print("❌ Bot conflict detected: Another instance is already running.")
-            print("💡 This is normal if the bot is deployed elsewhere.")
-            print("✅ Your bot code is working correctly!")
-            print("🔄 The deployed bot on Render.com is handling your commands.")
-            print("📱 Try testing with @abel5173_bot in a Telegram group.")
+            logger.warning(
+                "❌ Bot conflict detected: Another instance is already running."
+            )
+            logger.info("💡 This is normal if the bot is deployed elsewhere.")
+            logger.info("✅ Your bot code is working correctly!")
+            logger.info("🔄 The deployed bot on Render.com is handling your commands.")
+            logger.info("📱 Try testing with @abel5173_bot in a Telegram group.")
             sys.exit(0)
         elif "Timed out" in error_msg or "ConnectTimeout" in error_msg:
-            print("⏰ Connection timeout - this is normal during startup.")
-            print("✅ Bot is ready and will retry automatically.")
+            logger.warning("⏰ Connection timeout - this is normal during startup.")
+            logger.info("✅ Bot is ready and will retry automatically.")
             sys.exit(0)
         else:
-            print(f"❌ Unexpected error: {error_msg}")
+            logger.error(f"❌ Unexpected error: {error_msg}")
             sys.exit(1)
 
 

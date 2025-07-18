@@ -1,11 +1,14 @@
 # Core game state, player/role management, and game start/reset will go here.
 
 import random
-from typing import Dict, Set, Optional, Tuple, Any
+from typing import Dict, Set, Optional, Tuple, Any, List
 from bot.database.models import Player
 from bot.database import SessionLocal
 from bot.impostor.events import award_xp, award_win_bonus, handle_vote_xp
 from bot.ai.chaos_events import ai_chaos_events
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class ImpostorCore:
@@ -16,6 +19,7 @@ class ImpostorCore:
     """
 
     def __init__(self, config: Optional[dict] = None) -> None:
+        logger.debug("Initializing ImpostorCore")
         # user_id: {'name': name, 'alive': True}
         self.players: Dict[int, dict] = {}
         self.group_chat_id: Optional[int] = None
@@ -31,10 +35,14 @@ class ImpostorCore:
             "tasks_required": 2,
             "anonymous_voting": True,
         }
+        logger.info(f"ImpostorCore initialized with config: {self.config}")
 
     def add_player(self, user_id: int, name: str) -> bool:
-        """Add a player to the game. Returns True if added, False if already present or game started."""
+        logger.info(f"add_player called with user_id={user_id}, name={name}")
         if self.started or user_id in self.players:
+            logger.warning(
+                f"Cannot add player {user_id}: game started or already present."
+            )
             return False
         self.players[user_id] = {"name": name, "alive": True}
         db = SessionLocal()
@@ -43,12 +51,14 @@ class ImpostorCore:
             db.add(Player(id=user_id, name=name))
             db.commit()
         db.close()
+        logger.info(f"Player {user_id} added successfully.")
         return True
 
     def assign_roles(self) -> None:
-        """Randomly assign impostor and crewmate roles to players."""
+        logger.info("assign_roles called")
         all_ids = list(self.players.keys())
         self.impostors = set(random.sample(all_ids, self.config["impostor_count"]))
+        logger.info(f"Roles assigned: impostors={self.impostors}")
 
     def start_game(self) -> bool:
         """Start the game if enough players have joined. Returns True if started."""

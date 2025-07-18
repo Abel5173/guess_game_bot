@@ -5,6 +5,7 @@ from bot.imposter_royale.player import Player
 from bot.database import init_db, SessionLocal
 from bot.database.models import GameSession, PlayerGameLink, Player as PlayerModel
 
+
 @pytest.fixture(scope="module", autouse=True)
 def setup_db():
     init_db()
@@ -16,12 +17,14 @@ def setup_db():
     db.commit()
     db.close()
 
+
 @pytest.fixture
 def game():
     g = ImposterRoyaleGame(chat_id=123)
     loop = asyncio.get_event_loop()
     loop.run_until_complete(g.initialize())
     return g
+
 
 @pytest.mark.asyncio
 async def test_add_player(game):
@@ -30,6 +33,7 @@ async def test_add_player(game):
     players = await game.state.get_all_players()
     assert len(players) == 1
     assert players[0].name == "Test Player"
+
 
 @pytest.mark.asyncio
 async def test_game_phase(game):

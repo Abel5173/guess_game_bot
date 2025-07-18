@@ -15,6 +15,9 @@ async def create_topic_game_handler(
     update: Update, context: ContextTypes.DEFAULT_TYPE
 ) -> None:
     """Handler for creating a new topic-based game."""
+    logger.info(
+        f"create_topic_game_handler called by user {update.effective_user.id if update.effective_user else 'unknown'}"
+    )
     await topic_handler.create_game_topic(update, context)
 
 
@@ -22,8 +25,12 @@ async def join_topic_game_handler(
     update: Update, context: ContextTypes.DEFAULT_TYPE
 ) -> None:
     """Handler for joining a topic-based game."""
+    logger.info(
+        f"join_topic_game_handler called by user {update.effective_user.id if update.effective_user else 'unknown'}"
+    )
     query = update.callback_query
     if not query:
+        logger.warning("No callback_query in update")
         return
 
     # Extract topic_id from callback data
@@ -38,8 +45,12 @@ async def start_topic_game_handler(
     update: Update, context: ContextTypes.DEFAULT_TYPE
 ) -> None:
     """Handler for starting a topic-based game."""
+    logger.info(
+        f"start_topic_game_handler called by user {update.effective_user.id if update.effective_user else 'unknown'}"
+    )
     query = update.callback_query
     if not query:
+        logger.warning("No callback_query in update")
         return
 
     # Extract topic_id from callback data
@@ -54,8 +65,12 @@ async def join_queue_handler(
     update: Update, context: ContextTypes.DEFAULT_TYPE
 ) -> None:
     """Handler for joining the global game queue."""
+    logger.info(
+        f"join_queue_handler called by user {update.effective_user.id if update.effective_user else 'unknown'}"
+    )
     query = update.callback_query
     if not query:
+        logger.warning("No callback_query in update")
         return
     user_id = query.from_user.id
     if topic_handler.topic_manager.add_to_queue(user_id):
@@ -70,6 +85,9 @@ async def show_available_games_handler(
     update: Update, context: ContextTypes.DEFAULT_TYPE
 ) -> None:
     """Handler for showing available games."""
+    logger.info(
+        f"show_available_games_handler called by chat {update.effective_chat.id if update.effective_chat else 'unknown'}"
+    )
     chat = update.effective_chat
     if not chat.is_forum:
         await update.message.reply_text(
@@ -130,6 +148,9 @@ async def topic_message_handler(
     update: Update, context: ContextTypes.DEFAULT_TYPE
 ) -> None:
     """Handler for routing messages in topics to the correct game session."""
+    logger.info(
+        f"topic_message_handler called by user {update.effective_user.id if update.effective_user else 'unknown'}"
+    )
     await topic_handler.handle_topic_message(update, context)
 
 
@@ -137,8 +158,12 @@ async def rules_topic_handler(
     update: Update, context: ContextTypes.DEFAULT_TYPE
 ) -> None:
     """Handler for showing rules in a topic."""
+    logger.info(
+        f"rules_topic_handler called by user {update.effective_user.id if update.effective_user else 'unknown'}"
+    )
     query = update.callback_query
     if not query:
+        logger.warning("No callback_query in update")
         return
 
     try:
@@ -181,8 +206,12 @@ async def close_topic_handler(
     update: Update, context: ContextTypes.DEFAULT_TYPE
 ) -> None:
     """Handler for closing a topic."""
+    logger.info(
+        f"close_topic_handler called by user {update.effective_user.id if update.effective_user else 'unknown'}"
+    )
     query = update.callback_query
     if not query:
+        logger.warning("No callback_query in update")
         return
 
     try:
@@ -219,8 +248,12 @@ async def leaderboard_topic_handler(
     update: Update, context: ContextTypes.DEFAULT_TYPE
 ) -> None:
     """Handler for showing leaderboard in a topic."""
+    logger.info(
+        f"leaderboard_topic_handler called by user {update.effective_user.id if update.effective_user else 'unknown'}"
+    )
     query = update.callback_query
     if not query:
+        logger.warning("No callback_query in update")
         return
     try:
         topic_id = int(query.data.split("_")[2])
@@ -253,13 +286,18 @@ async def callback_query_handler(
     update: Update, context: ContextTypes.DEFAULT_TYPE
 ) -> None:
     """Main callback query handler for topic-related actions."""
+    logger.info(
+        f"callback_query_handler called by user {update.effective_user.id if update.effective_user else 'unknown'}"
+    )
     query = update.callback_query
     if not query:
+        logger.warning("No callback_query in update")
         return
 
     callback_data = query.data
 
     try:
+        logger.debug(f"Topic callback data: {callback_data}")
         if callback_data == "create_topic_game":
             await create_topic_game_handler(update, context)
         elif callback_data == "join_queue":
@@ -276,6 +314,7 @@ async def callback_query_handler(
             await leaderboard_topic_handler(update, context)
         else:
             # Let other handlers deal with it
+            logger.warning(f"Unhandled topic callback data: {callback_data}")
             return False
 
         return True

@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 async def open_crate_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle crate opening requests."""
     user = update.effective_user
+    logger.info(f"open_crate_handler called by user {user.id}")
 
     # For now, we'll simulate a game result to test crate opening
     # In real implementation, this would be called after game completion
@@ -45,6 +46,7 @@ async def open_crate_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
 async def show_titles_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show available titles for the player."""
     user = update.effective_user
+    logger.info(f"show_titles_handler called by user {user.id}")
     available_titles = engagement_engine.status_system.get_available_titles(user.id)
 
     if not available_titles:
@@ -92,6 +94,7 @@ async def show_titles_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
 async def show_basecamp_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show player's basecamp."""
     user = update.effective_user
+    logger.info(f"show_basecamp_handler called by user {user.id}")
     basecamp_display = engagement_engine.basecamp_system.generate_basecamp_display(
         user.id
     )
@@ -112,6 +115,7 @@ async def show_basecamp_handler(update: Update, context: ContextTypes.DEFAULT_TY
 async def change_theme_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle theme change requests."""
     user = update.effective_user
+    logger.info(f"change_theme_handler called by user {user.id}")
     themes = engagement_engine.basecamp_system.get_available_themes()
 
     keyboard_buttons = []
@@ -144,6 +148,7 @@ async def show_wager_options_handler(
 ):
     """Show wager options for risk-reward mode."""
     user = update.effective_user
+    logger.info(f"show_wager_options_handler called by user {user.id}")
 
     # Check if player already has a wager
     wager_info = engagement_engine.risk_reward_system.get_wager_info(user.id)
@@ -186,6 +191,7 @@ async def place_wager_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
     """Handle wager placement."""
     query = update.callback_query
     await query.answer()
+    logger.info(f"place_wager_handler called by user {update.effective_user.id}")
 
     user = update.effective_user
     wager_type_str = query.data.replace("place_wager_", "")
@@ -209,6 +215,7 @@ async def place_wager_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
 async def show_missions_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show player's active missions."""
     user = update.effective_user
+    logger.info(f"show_missions_handler called by user {user.id}")
     mission_display = engagement_engine.mission_system.generate_mission_display(user.id)
 
     await update.message.reply_text(mission_display, parse_mode=ParseMode.MARKDOWN)
@@ -220,6 +227,9 @@ async def claim_mission_rewards_handler(
     """Handle mission reward claiming."""
     query = update.callback_query
     await query.answer()
+    logger.info(
+        f"claim_mission_rewards_handler called by user {update.effective_user.id}"
+    )
 
     user = update.effective_user
     missions = engagement_engine.mission_system.get_player_missions(user.id)
@@ -252,6 +262,7 @@ async def claim_mission_rewards_handler(
 
 async def show_flash_events_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show active and upcoming flash events."""
+    logger.info(f"show_flash_events_handler called by user {update.effective_user.id}")
     flash_display = engagement_engine.flash_games_system.generate_flash_events_display()
 
     await update.message.reply_text(flash_display, parse_mode=ParseMode.MARKDOWN)
@@ -261,6 +272,7 @@ async def join_flash_event_handler(update: Update, context: ContextTypes.DEFAULT
     """Handle joining flash events."""
     query = update.callback_query
     await query.answer()
+    logger.info(f"join_flash_event_handler called by user {update.effective_user.id}")
 
     user = update.effective_user
     active_events = engagement_engine.flash_games_system.get_active_events()
@@ -301,6 +313,7 @@ async def join_flash_event_handler(update: Update, context: ContextTypes.DEFAULT
 async def show_cards_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show player's betrayal cards."""
     user = update.effective_user
+    logger.info(f"show_cards_handler called by user {user.id}")
     card_display = engagement_engine.betrayal_cards_system.generate_inventory_display(
         user.id
     )
@@ -312,6 +325,7 @@ async def use_card_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle card usage."""
     query = update.callback_query
     await query.answer()
+    logger.info(f"use_card_handler called by user {update.effective_user.id}")
 
     user = update.effective_user
     inventory = engagement_engine.betrayal_cards_system.get_player_inventory(user.id)
@@ -357,6 +371,7 @@ async def use_card_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def share_result_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle sharing game results."""
     user = update.effective_user
+    logger.info(f"share_result_handler called by user {user.id}")
 
     # For demonstration, create a sample game result
     game_result = {
@@ -395,6 +410,9 @@ async def show_sharing_leaderboard_handler(
     update: Update, context: ContextTypes.DEFAULT_TYPE
 ):
     """Show sharing leaderboard."""
+    logger.info(
+        f"show_sharing_leaderboard_handler called by user {update.effective_user.id}"
+    )
     leaderboard = (
         engagement_engine.shareable_results_system.generate_sharing_leaderboard()
     )
@@ -412,6 +430,7 @@ async def show_engagement_summary_handler(
 ):
     """Show comprehensive engagement summary."""
     user = update.effective_user
+    logger.info(f"show_engagement_summary_handler called by user {user.id}")
     summary = engagement_engine.generate_engagement_summary(user.id)
 
     keyboard = InlineKeyboardMarkup(
@@ -442,6 +461,8 @@ async def handle_engagement_callback(
     """Handle all engagement-related callback queries."""
     query = update.callback_query
     data = query.data
+    logger.info(f"handle_engagement_callback called by user {update.effective_user.id}")
+    logger.debug(f"Engagement callback data: {data}")
 
     try:
         if data == "change_title":

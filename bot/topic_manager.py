@@ -24,6 +24,7 @@ class TopicManager:
     """
 
     def __init__(self):
+        logger.debug("Initializing TopicManager")
         # Store active game sessions: {topic_id: ImpostorGame}
         self.active_sessions: Dict[int, ImpostorGame] = {}
         # Store topic metadata: {topic_id: TopicMetadata}
@@ -35,6 +36,7 @@ class TopicManager:
         self.queue_manager = JoinQueueManager()
 
     def get_game_session(self, topic_id: int) -> Optional[ImpostorGame]:
+        logger.info(f"get_game_session called with topic_id={topic_id}")
         """Get the game session for a specific topic."""
         return self.active_sessions.get(topic_id)
 

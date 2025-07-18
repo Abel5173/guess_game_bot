@@ -18,6 +18,7 @@ class AIGameMaster:
     """AI-powered game master that generates dynamic narratives and manages game flow."""
 
     def __init__(self):
+        logger.debug("Initializing AIGameMaster")
         self.current_games = {}  # Track active games
         self.game_history = []  # Store game events for lore generation
         self.station_names = [
@@ -48,6 +49,9 @@ class AIGameMaster:
         self, game_id: str, players: List[Dict], game_type: str = "standard"
     ) -> Dict[str, Any]:
         """Initialize a new game session with AI-generated narrative."""
+        logger.info(
+            f"start_game_session called with game_id={game_id}, players={len(players)}, game_type={game_type}"
+        )
         try:
             # Generate unique station name
             station_name = self._get_random_station_name()
@@ -105,6 +109,9 @@ class AIGameMaster:
         self, game_id: str, roles: Dict[int, str]
     ) -> str:
         """Generate narrative for role assignment."""
+        logger.info(
+            f"assign_roles_with_narrative called with game_id={game_id}, roles={len(roles)}"
+        )
         try:
             session = self.current_games.get(game_id)
             if not session:
@@ -148,6 +155,9 @@ class AIGameMaster:
         dead_players: List[str],
     ) -> str:
         """Generate narrative for the start of a new round."""
+        logger.info(
+            f"generate_round_narrative called with game_id={game_id}, round_number={round_number}, alive_players={len(alive_players)}, dead_players={len(dead_players)}"
+        )
         try:
             session = self.current_games.get(game_id)
             if not session:
@@ -190,6 +200,9 @@ Make it suspenseful and engaging."""
         round_number: int,
     ) -> str:
         """Generate narrative for voting results."""
+        logger.info(
+            f"generate_voting_narrative called with game_id={game_id}, ejected_player={ejected_player}, round_number={round_number}, votes={len(votes)}"
+        )
         try:
             session = self.current_games.get(game_id)
             if not session:
@@ -235,6 +248,9 @@ Make it cinematic and emotional."""
         self, game_id: str, trigger: str = "random"
     ) -> Optional[Dict[str, str]]:
         """Generate a random chaos event for the game."""
+        logger.info(
+            f"generate_chaos_event called with game_id={game_id}, trigger={trigger}"
+        )
         try:
             session = self.current_games.get(game_id)
             if not session:
@@ -270,6 +286,7 @@ Make it cinematic and emotional."""
         self, game_id: str, winner: str, game_stats: Dict[str, Any]
     ) -> str:
         """Generate dramatic conclusion for the game."""
+        logger.info(f"end_game_session called with game_id={game_id}, winner={winner}")
         try:
             session = self.current_games.get(game_id)
             if not session:
@@ -325,6 +342,7 @@ Make it epic and memorable."""
 
             # Clean up current game
             del self.current_games[game_id]
+            logger.info(f"Game session {game_id} ended. Winner: {winner}")
 
             return f"🪐 **Mission Complete**\n\n{conclusion}"
 
@@ -334,6 +352,7 @@ Make it epic and memorable."""
 
     async def generate_world_lore(self, season: int = 1) -> str:
         """Generate evolving world lore based on game history."""
+        logger.info(f"generate_world_lore called with season={season}")
         try:
             if not self.game_history:
                 return "The station awaits its first mission..."

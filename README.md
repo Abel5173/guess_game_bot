@@ -133,4 +133,29 @@ This will start the bot in a container, using the environment variables from you
 - For persistent data, mount a volume for the SQLite database or use a managed database (Postgres, etc) in production.
 - For cloud deployment (Heroku, Render, etc), set the environment variables in the platform's dashboard.
 
+## Code Style and Formatting
+
+This project uses [Black](https://black.readthedocs.io/) for automatic Python code formatting. All code must be formatted with Black before being committed or pushed.
+
+### Pre-commit Hook
+
+To ensure code is formatted before every commit, install pre-commit and set up the hook:
+
+```bash
+pip install pre-commit
+pre-commit install
+```
+
+This will automatically run Black on all staged Python files before each commit.
+
+### CI/CD Enforcement
+
+The CI/CD pipeline will run `black --check .` to ensure all code is formatted. Pushes or PRs with unformatted code will fail the pipeline.
+
+To manually format your code, run:
+
+```bash
+black .
+```
+
 --- 

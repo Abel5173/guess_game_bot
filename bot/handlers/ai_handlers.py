@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 async def ai_status_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show AI system status and enabled features."""
     user = update.effective_user
+    logger.info(f"ai_status_handler called by user {user.id}")
 
     enabled_features = ai_game_engine.get_enabled_features()
 
@@ -57,6 +58,7 @@ async def ai_status_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def ai_personas_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show AI-generated personas for current game."""
     user = update.effective_user
+    logger.info(f"ai_personas_handler called by user {user.id}")
 
     # Get current game session for user
     db = SessionLocal()
@@ -120,6 +122,7 @@ async def ai_personas_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
 async def ai_detective_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show AI detective analysis and suspicion scores."""
     user = update.effective_user
+    logger.info(f"ai_detective_handler called by user {user.id}")
 
     # Get current game session
     db = SessionLocal()
@@ -175,6 +178,7 @@ async def ai_detective_handler(update: Update, context: ContextTypes.DEFAULT_TYP
 async def ai_chaos_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show AI chaos events and trigger new ones."""
     user = update.effective_user
+    logger.info(f"ai_chaos_handler called by user {user.id}")
 
     # Get current game session
     db = SessionLocal()
@@ -246,6 +250,7 @@ async def ai_chaos_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def ai_lore_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Generate and display AI worldbuilding lore."""
     user = update.effective_user
+    logger.info(f"ai_lore_handler called by user {user.id}")
 
     # Generate world lore
     lore = await ai_game_engine.generate_world_lore()
@@ -274,6 +279,7 @@ async def ai_lore_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def ai_task_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Generate a new AI task for the user."""
     user = update.effective_user
+    logger.info(f"ai_task_handler called by user {user.id}")
 
     # Get current game session
     db = SessionLocal()
@@ -332,10 +338,13 @@ async def ai_task_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def handle_ai_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle all AI-related callback queries."""
+    user = update.effective_user
+    logger.info(f"handle_ai_callback called by user {user.id}")
     query = update.callback_query
     data = query.data
 
     try:
+        logger.debug(f"AI callback data: {data}")
         if data == "ai_personas":
             await ai_personas_handler(update, context)
         elif data == "ai_detective":
@@ -366,6 +375,7 @@ async def show_my_analysis(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show AI analysis for the current user."""
     query = update.callback_query
     user = update.effective_user
+    logger.info(f"show_my_analysis called by user {user.id}")
 
     # Get current game session
     db = SessionLocal()
@@ -399,6 +409,7 @@ async def trigger_chaos_event(update: Update, context: ContextTypes.DEFAULT_TYPE
     """Manually trigger a chaos event."""
     query = update.callback_query
     user = update.effective_user
+    logger.info(f"trigger_chaos_event called by user {user.id}")
 
     # Get current game session
     db = SessionLocal()
@@ -442,6 +453,7 @@ async def trigger_chaos_event(update: Update, context: ContextTypes.DEFAULT_TYPE
 async def generate_new_lore(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Generate new world lore."""
     query = update.callback_query
+    logger.info(f"generate_new_lore called by user {update.effective_user.id}")
 
     # Generate new lore
     lore = await ai_game_engine.generate_world_lore()
@@ -453,6 +465,7 @@ async def complete_ai_task(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Complete the current AI task."""
     query = update.callback_query
     user = update.effective_user
+    logger.info(f"complete_ai_task called by user {user.id}")
 
     # Get current game session
     db = SessionLocal()

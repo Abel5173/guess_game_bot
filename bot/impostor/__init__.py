@@ -1,3 +1,6 @@
+import logging
+
+logger = logging.getLogger(__name__)
 from .core import ImpostorCore
 from .phases import PhaseManager
 from .voting import VotingManager
@@ -20,6 +23,7 @@ class ImpostorGame:
     """
 
     def __init__(self, config=None):
+        logger.debug("Initializing ImpostorGame")
         self.core = ImpostorCore(config)
         self.ai_clues = AIClueManager(self.core)
         self.phases = PhaseManager(self.core, self.ai_clues)
@@ -31,16 +35,20 @@ class ImpostorGame:
         self.db_session_id = None  # Will be set when game is created in a topic
 
     def set_db_session_id(self, session_id: int):
+        logger.info(f"set_db_session_id called with session_id={session_id}")
         """Set the database session ID for this game."""
         self.db_session_id = session_id
 
     def add_player(self, user_id, name):
+        logger.info(f"add_player called with user_id={user_id}, name={name}")
         return self.core.add_player(user_id, name)
 
     def get_type(self):
+        logger.debug("get_type called")
         return "impostor"
 
     def get_game(self):
+        logger.debug("get_game called")
         return self
 
     async def join_impostor(self, update, context):

@@ -1,7 +1,11 @@
+import logging
+
+logger = logging.getLogger(__name__)
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 
 def main_menu():
+    logger.debug("main_menu called")
     """Main menu with core actions."""
     keyboard = [
         [InlineKeyboardButton("👤 Profile", callback_data="show_profile")],

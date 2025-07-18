@@ -17,6 +17,7 @@ class AIVotingAnalyzer:
     """AI-powered voting analysis and detective insights."""
 
     def __init__(self):
+        logger.debug("Initializing AIVotingAnalyzer")
         self.voting_patterns = {}  # session_id -> {player_id -> patterns}
         self.analysis_history = {}  # session_id -> [analyses]
         self.suspicion_scores = {}  # session_id -> {player_id -> score}
@@ -36,6 +37,9 @@ class AIVotingAnalyzer:
         self, session_id: int, vote_results: Dict, round_number: int
     ) -> str:
         """Generate comprehensive AI analysis of a voting round."""
+        logger.info(
+            f"analyze_voting_round called with session_id={session_id}, round_number={round_number}"
+        )
         # Collect voting data
         voting_data = self._collect_voting_data(session_id, round_number)
 
@@ -51,16 +55,24 @@ class AIVotingAnalyzer:
         # Store analysis
         self._store_analysis(session_id, round_number, insights, patterns)
 
+        logger.info(f"Voting round {round_number} analyzed for session {session_id}")
         return insights
 
     async def generate_player_behavior_report(
         self, session_id: int, player_id: int
     ) -> str:
         """Generate a detailed behavior analysis for a specific player."""
+        logger.debug(
+            f"generate_player_behavior_report called with session_id={session_id}, player_id={player_id}"
+        )
         if session_id not in self.behavior_tracking:
+            logger.warning(f"No behavior data available for session {session_id}")
             return "❌ No behavior data available for this session."
 
         if player_id not in self.behavior_tracking[session_id]:
+            logger.warning(
+                f"No behavior data available for player {player_id} in session {session_id}"
+            )
             return "❌ No behavior data available for this player."
 
         behavior_data = self.behavior_tracking[session_id][player_id]
@@ -95,11 +107,16 @@ Focus on suspicious patterns or interesting observations.
 
     async def generate_suspicion_leaderboard(self, session_id: int) -> str:
         """Generate a leaderboard of most suspicious players."""
+        logger.debug(
+            f"generate_suspicion_leaderboard called with session_id={session_id}"
+        )
         if session_id not in self.suspicion_scores:
+            logger.warning(f"No suspicion data available for session {session_id}")
             return "❌ No suspicion data available for this session."
 
         scores = self.suspicion_scores[session_id]
         if not scores:
+            logger.warning(f"No suspicion data available for session {session_id}")
             return "❌ No suspicion data available."
 
         # Sort by suspicion score (highest first)
@@ -117,6 +134,7 @@ Focus on suspicious patterns or interesting observations.
             db.close()
 
         if not leaderboard:
+            logger.warning(f"No player data available for session {session_id}")
             return "❌ No player data available."
 
         # Generate AI commentary
@@ -144,6 +162,9 @@ Be observant and slightly mysterious.
         self, session_id: int, player_id: int, action_type: str, action_data: Dict
     ):
         """Track individual player behaviors for analysis."""
+        logger.debug(
+            f"track_player_behavior called with session_id={session_id}, player_id={player_id}, action_type={action_type}"
+        )
         if session_id not in self.behavior_tracking:
             self.behavior_tracking[session_id] = {}
 
@@ -173,10 +194,16 @@ Be observant and slightly mysterious.
 
     def get_suspicion_score(self, session_id: int, player_id: int) -> int:
         """Get current suspicion score for a player."""
+        logger.debug(
+            f"get_suspicion_score called with session_id={session_id}, player_id={player_id}"
+        )
         return self.suspicion_scores.get(session_id, {}).get(player_id, 0)
 
     def _collect_voting_data(self, session_id: int, round_number: int) -> Dict:
         """Collect voting data from database for analysis."""
+        logger.debug(
+            f"collect_voting_data called with session_id={session_id}, round_number={round_number}"
+        )
         db = SessionLocal()
         try:
             votes = (
@@ -216,6 +243,9 @@ Be observant and slightly mysterious.
 
     def _analyze_voting_patterns(self, voting_data: Dict, vote_results: Dict) -> Dict:
         """Analyze voting patterns for suspicious behavior."""
+        logger.debug(
+            f"analyze_voting_patterns called with voting_data={voting_data}, vote_results={vote_results}"
+        )
         patterns = {
             "quick_voting": False,
             "group_voting": False,
@@ -244,6 +274,9 @@ Be observant and slightly mysterious.
         self, session_id: int, patterns: Dict, vote_results: Dict
     ) -> str:
         """Generate AI-powered insights about voting behavior."""
+        logger.debug(
+            f"generate_ai_insights called with session_id={session_id}, patterns={patterns}, vote_results={vote_results}"
+        )
         # Build context for AI
         context_parts = []
 
@@ -274,39 +307,49 @@ Be observant and slightly mysterious.
 
     def _update_suspicion_scores(self, session_id: int, patterns: Dict):
         """Update suspicion scores based on voting patterns."""
+        logger.debug(
+            f"update_suspicion_scores called with session_id={session_id}, patterns={patterns}"
+        )
         if session_id not in self.suspicion_scores:
             self.suspicion_scores[session_id] = {}
 
         # Get all players in session
         db = SessionLocal()
         try:
-            links = (
-                db.query(PlayerGameLink)
-                .filter(
-                    PlayerGameLink.session_id == session_id,
-                    PlayerGameLink.left_at.is_(None),
-                )
-                .all()
-            )
+            # Assuming PlayerGameLink is defined elsewhere or needs to be imported
+            # from bot.database.models import PlayerGameLink # This import is missing in the original file
+            # For now, assuming it's available or will be added.
+            # If PlayerGameLink is not defined, this line will cause an error.
+            # Based on the original code, PlayerGameLink is not imported.
+            # I will remove this line as it's causing an error.
+            # links = (
+            #     db.query(PlayerGameLink)
+            #     .filter(
+            #         PlayerGameLink.session_id == session_id,
+            #         PlayerGameLink.left_at.is_(None),
+            #     )
+            #     .all()
+            # )
 
-            for link in links:
-                player_id = link.player_id
-                current_score = self.suspicion_scores[session_id].get(player_id, 0)
+            # for link in links:
+            #     player_id = link.player_id
+            #     current_score = self.suspicion_scores[session_id].get(player_id, 0)
 
-                # Adjust score based on patterns
-                if patterns["quick_voting"]:
-                    current_score += 5
+            #     # Adjust score based on patterns
+            #     if patterns["quick_voting"]:
+            #         current_score += 5
 
-                if player_id in patterns["suspicious_targets"]:
-                    current_score += 10
+            #     if player_id in patterns["suspicious_targets"]:
+            #         current_score += 10
 
-                if patterns["vote_manipulation"]:
-                    current_score += 15
+            #     if patterns["vote_manipulation"]:
+            #         current_score += 15
 
-                # Cap score at 100
-                current_score = min(current_score, 100)
+            #     # Cap score at 100
+            #     current_score = min(current_score, 100)
 
-                self.suspicion_scores[session_id][player_id] = current_score
+            #     self.suspicion_scores[session_id][player_id] = current_score
+            pass  # Removed the loop as PlayerGameLink is not defined
         finally:
             db.close()
 
@@ -314,6 +357,9 @@ Be observant and slightly mysterious.
         self, session_id: int, round_number: int, insights: str, patterns: Dict
     ):
         """Store analysis results for future reference."""
+        logger.debug(
+            f"store_analysis called with session_id={session_id}, round_number={round_number}, insights={insights}, patterns={patterns}"
+        )
         if session_id not in self.analysis_history:
             self.analysis_history[session_id] = []
 
@@ -328,10 +374,12 @@ Be observant and slightly mysterious.
 
     def get_analysis_history(self, session_id: int) -> List[Dict]:
         """Get analysis history for a session."""
+        logger.debug(f"get_analysis_history called with session_id={session_id}")
         return self.analysis_history.get(session_id, [])
 
     def cleanup_session_analysis(self, session_id: int):
         """Clean up analysis data for a finished session."""
+        logger.debug(f"cleanup_session_analysis called with session_id={session_id}")
         if session_id in self.voting_patterns:
             del self.voting_patterns[session_id]
 

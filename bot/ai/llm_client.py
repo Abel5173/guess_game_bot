@@ -17,6 +17,7 @@ class GameLLMClient:
     """Centralized LLM client for all AI-powered game features."""
 
     def __init__(self):
+        logger.debug("Initializing GameLLMClient")
         self.hf_token = os.getenv("HF_API_KEY")
         if not self.hf_token:
             logger.warning("HF_API_KEY not found - AI features will be disabled")
@@ -63,6 +64,9 @@ class GameLLMClient:
         cache_key: Optional[str] = None,
     ) -> str:
         """Generate AI response with caching and error handling."""
+        logger.info(
+            f"generate_response called with model_type={model_type}, max_tokens={max_tokens}, temperature={temperature}, cache_key={cache_key}"
+        )
         if not self.enabled:
             return self._get_fallback_response(prompt, model_type)
 
@@ -70,14 +74,19 @@ class GameLLMClient:
         if cache_key and cache_key in self.response_cache:
             cached = self.response_cache[cache_key]
             if datetime.now().timestamp() - cached["timestamp"] < self.cache_ttl:
+                logger.info(f"Response found in cache for key: {cache_key}")
                 return cached["response"]
 
         try:
             # Format prompt based on model type
             formatted_prompt = self._format_prompt(prompt, model_type)
+            logger.debug(
+                f"Formatted prompt for model_type={model_type}: {formatted_prompt}"
+            )
 
             # Get response from appropriate model
             client = self.clients.get(model_type, self.clients["narrative"])
+            logger.debug(f"Using client for model_type={model_type}: {client.model}")
 
             response = client.text_generation(
                 formatted_prompt,
@@ -86,9 +95,11 @@ class GameLLMClient:
                 do_sample=True,
                 return_full_text=False,
             )
+            logger.info("AI response generated successfully")
 
             # Clean and validate response
             cleaned_response = self._clean_response(response)
+            logger.debug(f"Cleaned response: {cleaned_response}")
 
             # Cache if requested
             if cache_key:
@@ -96,6 +107,7 @@ class GameLLMClient:
                     "response": cleaned_response,
                     "timestamp": datetime.now().timestamp(),
                 }
+                logger.info(f"Response cached for key: {cache_key}")
 
             return cleaned_response
 
@@ -177,7 +189,9 @@ Request: {prompt} [/INST]"""
         """Generate dramatic game narrative."""
         prompt = f"""Create a dramatic opening narrative for a {game_type} impostor game on a {theme} with {player_count} players. 
 Include suspense, mystery, and urgency. Make it feel like a sci-fi thriller."""
-
+        logger.info(
+            f"generate_game_narrative called with game_type={game_type}, player_count={player_count}, theme={theme}"
+        )
         return await self.generate_response(
             prompt, model_type="narrative", max_tokens=150, temperature=0.8
         )
@@ -189,7 +203,9 @@ Include suspense, mystery, and urgency. Make it feel like a sci-fi thriller."""
         prompt = f"""Create a unique character persona for {player_name} who is a {role}.
 Include: personality traits, background story, and secret behavior goal.
 Format as JSON with keys: name, personality, background, secret_goal"""
-
+        logger.info(
+            f"generate_player_persona called with player_name={player_name}, role={role}"
+        )
         response = await self.generate_response(
             prompt, model_type="creative", max_tokens=200, temperature=0.9
         )
@@ -197,9 +213,13 @@ Format as JSON with keys: name, personality, background, secret_goal"""
         try:
             # Try to parse JSON response
             persona = json.loads(response)
+            logger.info(f"Persona generated for {player_name}: {persona}")
             return persona
         except:
             # Fallback if JSON parsing fails
+            logger.warning(
+                f"Failed to parse persona JSON for {player_name}. Falling back to default."
+            )
             return {
                 "name": player_name,
                 "personality": "Mysterious and cautious",
@@ -214,7 +234,9 @@ Format as JSON with keys: name, personality, background, secret_goal"""
         prompt = f"""Create a unique task for {player_name} who is a {role}.
 Difficulty: {difficulty}
 Make it engaging and thematic. For impostors, create sabotage or deception tasks."""
-
+        logger.info(
+            f"generate_dynamic_task called with role={role}, player_name={player_name}, difficulty={difficulty}"
+        )
         return await self.generate_response(
             prompt, model_type="creative", max_tokens=100, temperature=0.7
         )
@@ -229,7 +251,9 @@ Ejected: {ejected_player}
 Round: {round_number}
 
 Provide 2-3 insights about voting patterns, player behavior, or strategic implications."""
-
+        logger.info(
+            f"analyze_voting_behavior called with votes={votes}, ejected_player={ejected_player}, round_number={round_number}"
+        )
         return await self.generate_response(
             prompt, model_type="reasoning", max_tokens=150, temperature=0.6
         )
@@ -244,7 +268,9 @@ Won: {won}
 Stats: {game_stats}
 
 Make it dramatic, personalized, and include a unique title and tip for improvement."""
-
+        logger.info(
+            f"generate_player_report called with player_name={player_name}, role={role}, won={won}"
+        )
         return await self.generate_response(
             prompt, model_type="narrative", max_tokens=200, temperature=0.8
         )
@@ -259,7 +285,9 @@ Players: {player_count}
 
 Create an event that adds drama and unpredictability.
 Format as JSON with keys: event_name, description, effect"""
-
+        logger.info(
+            f"generate_chaos_event called with game_state={game_state}, player_count={player_count}"
+        )
         response = await self.generate_response(
             prompt, model_type="creative", max_tokens=150, temperature=0.9
         )
@@ -267,6 +295,7 @@ Format as JSON with keys: event_name, description, effect"""
         try:
             return json.loads(response)
         except:
+            logger.warning("Failed to parse chaos event JSON. Falling back to default.")
             return {
                 "event_name": "System Malfunction",
                 "description": "Communications are temporarily disrupted",
@@ -283,7 +312,9 @@ Season: {season}
 Recent events: {game_history[-5:] if game_history else 'None'}
 
 Create a mysterious, evolving narrative that connects the games."""
-
+        logger.info(
+            f"generate_world_lore called with game_history_len={len(game_history)}, season={season}"
+        )
         return await self.generate_response(
             prompt, model_type="narrative", max_tokens=200, temperature=0.8
         )
@@ -309,7 +340,7 @@ Create a mysterious, evolving narrative that connects the games."""
         Format the output as a JSON object with the following keys:
         "winning_team", "narrative", "mvp": {"name", "reason"}, "notable_plays": [], "final_verdict"
         """
-
+        logger.info(f"generate_game_summary called with game_log_len={len(game_log)}")
         response = await self.generate_response(
             prompt, model_type="reasoning", max_tokens=400, temperature=0.7
         )
