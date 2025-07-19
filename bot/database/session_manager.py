@@ -15,8 +15,12 @@ from bot.database.models import (
     TaskLog,
     JoinQueue,
     Player,
+    ActiveGame,
+    GameStats,
 )
 import logging
+import datetime
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -423,3 +427,107 @@ class AnalyticsManager:
                 finished_sessions / total_sessions if total_sessions > 0 else 0
             ),
         }
+
+
+def save_game(session: Session, chat_id: int, mode: str, data: dict) -> None:
+    """Save or update a game in the database."""
+    obj = session.query(ActiveGame).filter_by(chat_id=chat_id).first()
+    now = datetime.datetime.utcnow()
+    if obj:
+        obj.mode = mode
+        obj.data = data
+        obj.last_activity = now
+    else:
+        obj = ActiveGame(chat_id=chat_id, mode=mode, data=data, last_activity=now)
+        session.add(obj)
+    session.commit()
+
+
+def load_game(session: Session, chat_id: int) -> Optional[ActiveGame]:
+    """Load a game from the database by chat_id."""
+    return session.query(ActiveGame).filter_by(chat_id=chat_id).first()
+
+
+def delete_game(session: Session, chat_id: int) -> None:
+    """Delete a game from the database by chat_id."""
+    obj = session.query(ActiveGame).filter_by(chat_id=chat_id).first()
+    if obj:
+        session.delete(obj)
+        session.commit()
+
+
+def list_active_games(session: Session) -> list:
+    """List all active games in the database."""
+    return session.query(ActiveGame).all()
+
+
+def log_game_stats(
+    session: Session,
+    chat_id: int,
+    game_mode: str,
+    player_id: Optional[int],
+    team: Optional[str],
+    result: str,
+    guesses: int,
+    max_stress: int,
+    duration: Optional[int],
+    mvp: bool = False,
+) -> None:
+    """Log a game stats record at game end."""
+    stats = GameStats(
+        chat_id=chat_id,
+        game_mode=game_mode,
+        player_id=player_id,
+        team=team,
+        result=result,
+        guesses=guesses,
+        max_stress=max_stress,
+        duration=duration,
+        mvp=mvp,
+    )
+    session.add(stats)
+    session.commit()
+
+
+def get_player_stats(session: Session, player_id: int) -> dict:
+    """Aggregate stats for a player."""
+    from sqlalchemy import func
+    total_games = session.query(func.count()).filter(GameStats.player_id == player_id).scalar()
+    wins = session.query(func.count()).filter(GameStats.player_id == player_id, GameStats.result == 'win').scalar()
+    avg_guesses = session.query(func.avg(GameStats.guesses)).filter(GameStats.player_id == player_id).scalar() or 0
+    max_stress = session.query(func.max(GameStats.max_stress)).filter(GameStats.player_id == player_id).scalar() or 0
+    return {
+        "total_games": total_games,
+        "wins": wins,
+        "win_rate": (wins / total_games) * 100 if total_games else 0,
+        "avg_guesses": round(avg_guesses, 2),
+        "max_stress": max_stress,
+    }
+
+def get_team_stats(session: Session, team: str) -> dict:
+    """Aggregate stats for a team."""
+    from sqlalchemy import func
+    total_games = session.query(func.count()).filter(GameStats.team == team).scalar()
+    wins = session.query(func.count()).filter(GameStats.team == team, GameStats.result == 'win').scalar()
+    avg_guesses = session.query(func.avg(GameStats.guesses)).filter(GameStats.team == team).scalar() or 0
+    max_stress = session.query(func.max(GameStats.max_stress)).filter(GameStats.team == team).scalar() or 0
+    return {
+        "total_games": total_games,
+        "wins": wins,
+        "win_rate": (wins / total_games) * 100 if total_games else 0,
+        "avg_guesses": round(avg_guesses, 2),
+        "max_stress": max_stress,
+    }
+
+def get_leaderboard(session: Session, top_n: int = 10) -> list:
+    """Return top N players by number of wins."""
+    from sqlalchemy import func
+    rows = (
+        session.query(GameStats.player_id, func.count().label('wins'))
+        .filter(GameStats.result == 'win', GameStats.player_id != None)
+        .group_by(GameStats.player_id)
+        .order_by(func.count().desc())
+        .limit(top_n)
+        .all()
+    )
+    return [(row.player_id, row.wins) for row in rows]

@@ -5,8 +5,8 @@ Analytics handlers for database-powered insights and statistics.
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from telegram.constants import ParseMode
-from bot.database.session_manager import AnalyticsManager
-from bot.database import SessionLocal
+from bot.database.session_manager import get_player_stats, get_team_stats, get_leaderboard
+from bot.database import get_session
 from bot.database.models import Player, GameSession
 from sqlalchemy import func, desc
 from datetime import datetime, timedelta
@@ -20,8 +20,8 @@ async def show_player_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.info(f"show_player_stats called by user {update.effective_user.id}")
     user = update.effective_user
 
-    with AnalyticsManager() as analytics:
-        stats = analytics.get_player_stats(user.id)
+    with get_session() as session:
+        stats = get_player_stats(session, user.id)
 
     if not stats:
         await update.message.reply_text(
@@ -69,8 +69,8 @@ async def show_session_leaderboard(update: Update, context: ContextTypes.DEFAULT
         )
         return
 
-    with AnalyticsManager() as analytics:
-        leaderboard = analytics.get_session_leaderboard(session_id)
+    with get_session() as session:
+        leaderboard = get_leaderboard(session, session_id)
 
     if not leaderboard:
         await update.message.reply_text("❌ No data found for this session.")
@@ -108,8 +108,8 @@ async def show_chat_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show statistics for the current chat."""
     chat = update.effective_chat
 
-    with AnalyticsManager() as analytics:
-        stats = analytics.get_chat_stats(chat.id)
+    with get_session() as session:
+        stats = get_team_stats(session, chat.id)
 
     completion_rate = stats["completion_rate"] * 100
 
@@ -127,7 +127,7 @@ async def show_chat_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def show_global_leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show global leaderboard across all chats."""
-    db = SessionLocal()
+    db = get_session()
 
     # Get top players by XP
     top_players = db.query(Player).order_by(desc(Player.xp)).limit(20).all()
@@ -156,7 +156,7 @@ async def show_global_leaderboard(update: Update, context: ContextTypes.DEFAULT_
 
 async def show_recent_games(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show recent game sessions."""
-    db = SessionLocal()
+    db = get_session()
 
     # Get recent sessions
     recent_sessions = (

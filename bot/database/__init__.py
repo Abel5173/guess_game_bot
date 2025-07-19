@@ -21,7 +21,7 @@ Base = declarative_base()
 
 
 def init_db() -> None:
-    # Import models to ensure they are registered with Base
-    from bot.database.models import Player, Task  # noqa: F401
+    # Import all models here to ensure they are registered with Base
+    from bot.database.models import Player, Task, PlayerStats  # noqa: F401
 
     Base.metadata.create_all(bind=engine)

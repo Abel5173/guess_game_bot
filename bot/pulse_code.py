@@ -1,149 +1,49 @@
 import random
 import logging
 from typing import List, Dict, Optional, Tuple
+from bot.llm_service import generate_ai_response, get_ai_guess
 
 logger = logging.getLogger(__name__)
 
 
 # --- AI Personalities ---
 class PulseAIPersonality:
-    def __init__(self, name: str):
+    def __init__(self, name: str, persona_prompt: str):
         self.name = name
+        self.persona_prompt = persona_prompt
 
-    def feedback(self, guess: str, code: str) -> str:
-        # Default feedback, can be overridden
-        return "Processing your guess..."
-
-    def get_hint(self, code: str) -> str:
-        # Default hint, can be overridden
-        return "No hint available."
-
-
-class Calculon(PulseAIPersonality):
-    def feedback(
-        self,
-        guess: str,
-        code: str,
-        hits: int,
-        flashes: int,
-        static: int,
-        stress: int,
-        guess_history: list,
-    ) -> str:
-        msg = f"[Calculon] Analysis: {hits} Hits, {flashes} Flashes, {static} Static."
-        if guess in guess_history[:-1]:
-            msg += " You have repeated a previous guess. Redundant input detected."
-        if hits == 4:
-            msg += " Solution confirmed. You have achieved optimal deduction."
-        elif stress > 80:
-            msg += " Your logic is faltering under pressure."
-        elif static == 4:
-            msg += " None of your digits are present. Recalibrate your approach."
-        elif hits == 0 and flashes == 0:
-            msg += " No progress. Consider a new hypothesis."
-        else:
-            msg += " Continue refining your hypothesis."
-        return msg
-
-    def get_hint(self, code: str, guess_history: list) -> str:
-        return "The code is logically constructed. Consider digit progression."
-
-    def public_banter(self, player_username: str, stress: int) -> str:
-        if stress > 90:
-            return f"[Calculon] @${player_username}, your system is on the verge of collapse."
-        return random.choice(
-            [
-                f"[Calculon] @${player_username}, your deduction rate is suboptimal.",
-                f"[Calculon] @${player_username}, are you certain of your logic?",
-            ]
+    def _generate_prompt(self, base_prompt: str, context: Dict) -> str:
+        """Builds a detailed prompt for the LLM."""
+        prompt = (
+            f"You are {self.name}, a character with this persona: '{self.persona_prompt}'. "
+            f"You are playing a code-breaking game called Pulse-Code. "
+            f"The player's username is @{context.get('player_username', 'player')}. "
+            f"Their current stress level is {context.get('stress', 0)}/100. "
+            f"They just guessed `{context.get('guess', '????')}` against your code. "
+            f"The result was {context.get('hits', 0)} Hits, {context.get('flashes', 0)} Flashes, and {context.get('static', 0)} Static. "
+            f"This is their {len(context.get('guess_history', []))} guess. "
+            f"Based on this, {base_prompt} "
+            f"Keep your response concise (1-2 sentences) and in character."
         )
+        return prompt
 
+    def feedback(self, context: Dict) -> str:
+        """Generates AI feedback using the LLM."""
+        base_prompt = "provide direct feedback to the player about their guess."
+        prompt = self._generate_prompt(base_prompt, context)
+        return generate_ai_response(prompt)
 
-class Maverick(PulseAIPersonality):
-    def feedback(
-        self,
-        guess: str,
-        code: str,
-        hits: int,
-        flashes: int,
-        static: int,
-        stress: int,
-        guess_history: list,
-    ) -> str:
-        msg = f"[Maverick] {hits} Hits, {flashes} Flashes, {static} Static."
-        if guess in guess_history[:-1]:
-            msg += " Deja vu? Try something new!"
-        if hits == 4:
-            msg += " Whoa! You actually did it!"
-        elif stress > 80:
-            msg += " Feeling the heat? Maybe try something wild!"
-        elif static == 4:
-            msg += " Swing and a miss! Not even close."
-        elif hits == 0 and flashes == 0:
-            msg += " Ouch, that's cold."
-        else:
-            msg += " Not bad, but can you keep up with me?"
-        return msg
+    def get_hint(self, context: Dict) -> str:
+        """Generates a hint using the LLM."""
+        base_prompt = "provide a cryptic hint to the player. Do not reveal the code."
+        prompt = self._generate_prompt(base_prompt, context)
+        return generate_ai_response(prompt)
 
-    def get_hint(self, code: str, guess_history: list) -> str:
-        return "I like codes with a twist. Maybe the answer isn't what you expect."
-
-    def public_banter(self, player_username: str, stress: int) -> str:
-        if stress > 90:
-            return f"[Maverick] @${player_username}, are you about to break?"
-        return random.choice(
-            [
-                f"[Maverick] @${player_username}, you call that a guess?",
-                f"[Maverick] @${player_username}, try to keep up!",
-            ]
-        )
-
-
-class Sentinel(PulseAIPersonality):
-    def feedback(
-        self,
-        guess: str,
-        code: str,
-        hits: int,
-        flashes: int,
-        static: int,
-        stress: int,
-        guess_history: list,
-    ) -> str:
-        msg = f"[Sentinel] {hits} Hits, {flashes} Flashes, {static} Static."
-        if guess in guess_history[:-1]:
-            msg += " Pattern repetition detected."
-        if hits == 4:
-            msg += " The system acknowledges your mastery."
-        elif stress > 80:
-            msg += " Warning: Your system is nearing collapse."
-        elif static == 4:
-            msg += " All signals lost. None of your guess is present."
-        elif hits == 0 and flashes == 0:
-            msg += " The void grows deeper."
-        else:
-            msg += " The system observes. Adjust your tactics."
-        return msg
-
-    def get_hint(self, code: str, guess_history: list) -> str:
-        return "Peripheral digits may be more important than you think."
-
-    def public_banter(self, player_username: str, stress: int) -> str:
-        if stress > 90:
-            return f"[Sentinel] @${player_username}, system integrity is critical."
-        return random.choice(
-            [
-                f"[Sentinel] @${player_username}, the system is watching.",
-                f"[Sentinel] @${player_username}, your approach is being logged.",
-            ]
-        )
-
-
-AI_PERSONALITIES = {
-    "calculon": Calculon("Calculon"),
-    "maverick": Maverick("Maverick"),
-    "sentinel": Sentinel("Sentinel"),
-}
+    def public_banter(self, context: Dict) -> str:
+        """Generates public banter using the LLM."""
+        base_prompt = "generate a witty or taunting remark to say to the player in a public chat."
+        prompt = self._generate_prompt(base_prompt, context)
+        return generate_ai_response(prompt)
 
 
 # --- Core Game Logic ---
@@ -177,18 +77,14 @@ class PulsePlayerState:
         self.mind_link_used = False
 
     def increase_stress(self, static: int):
-        # More static = more stress
         self.stress += static * 10
         self.stress = min(self.stress, 100)
 
     def apply_penalty(self):
-        # Apply penalty based on stress
         if self.stress >= 100:
             return "Failsafe Lockout"
         elif self.stress >= 70:
             return random.choice(["Data Glitch", "System Lag"])
-        elif self.stress >= 40:
-            return "Warning: System Stress Rising"
         return None
 
 
@@ -199,7 +95,7 @@ class PulseCodeGame:
         players: List[int],
         ai_personalities: Optional[List[str]] = None,
     ):
-        self.mode = mode  # architect, dual, triple
+        self.mode = mode
         self.players: Dict[int, PulsePlayerState] = {}
         self.turn_order: List[int] = []
         self.active = True
@@ -208,7 +104,7 @@ class PulseCodeGame:
         self.winner: Optional[int] = None
         self.ai_personalities = ai_personalities or []
         self.init_players(players)
-        self.last_guess_target: Optional[int] = None  # For feedback in triple threat
+        self.ai_targets: Dict[int, int] = {}
 
     def init_players(self, players: List[int]):
         for idx, user_id in enumerate(players):
@@ -226,7 +122,7 @@ class PulseCodeGame:
     def next_turn(self):
         self.current_turn = (self.current_turn + 1) % len(self.turn_order)
 
-    def make_guess(self, guesser_id: int, target_id: int, guess: str) -> Dict:
+    def make_guess(self, guesser_id: int, target_id: int, guess: str, guesser_username: str) -> Dict:
         if not self.active:
             return {"error": "Game is not active."}
         guesser = self.players[guesser_id]
@@ -235,31 +131,32 @@ class PulseCodeGame:
             return {"error": "System Stress is critical! You cannot guess."}
         if len(guess) != 4 or len(set(guess)) != 4 or not guess.isdigit():
             return {"error": "Invalid guess. Must be 4 unique digits."}
+        
         hits, flashes, static = analyze_guess(guess, target.code)
         guesser.guesses.append(guess)
         guesser.increase_stress(static)
         penalty = guesser.apply_penalty()
+        
         ai_feedback = None
         ai_public = None
+
         if target.is_ai and target.ai_personality:
-            ai = AI_PERSONALITIES.get(target.ai_personality.lower())
+            ai_persona_key = target.ai_personality.lower()
+            ai = AI_PERSONALITIES.get(ai_persona_key)
             if ai:
-                ai_feedback = ai.feedback(
-                    guess,
-                    target.code,
-                    hits,
-                    flashes,
-                    static,
-                    guesser.stress,
-                    guesser.guesses,
-                )
-                # Occasionally send public banter
-                if random.random() < 0.25 or (
-                    guesser.stress > 90 and random.random() < 0.5
-                ):
-                    ai_public = ai.public_banter(
-                        getattr(guesser, "username", str(guesser_id)), guesser.stress
-                    )
+                context = {
+                    "player_username": guesser_username,
+                    "guess": guess,
+                    "hits": hits,
+                    "flashes": flashes,
+                    "static": static,
+                    "stress": guesser.stress,
+                    "guess_history": guesser.guesses,
+                }
+                ai_feedback = ai.feedback(context)
+                if random.random() < 0.3:  # 30% chance for public banter
+                    ai_public = ai.public_banter(context)
+
         result = {
             "hits": hits,
             "flashes": flashes,
@@ -270,46 +167,15 @@ class PulseCodeGame:
             "ai_feedback": ai_feedback,
             "ai_public": ai_public,
         }
+        
         if hits == 4:
             self.active = False
             self.winner = guesser_id
+            
         self.history.append(
-            {
-                "guesser": guesser_id,
-                "target": target_id,
-                "guess": guess,
-                "result": result,
-            }
+            {"guesser": guesser_id, "target": target_id, "guess": guess, "result": result}
         )
-        self.last_guess_target = target_id
         return result
-
-    def use_mind_link(self, user_id: int, target_id: int) -> str:
-        player = self.players[user_id]
-        if player.mind_link_used:
-            return "Mind Link already used."
-        player.mind_link_used = True
-        code = self.players[target_id].code
-        hint = f"One of the digits is {random.choice(code)}."
-        player.increase_stress(5)
-        return hint
-
-    def desperation_gambit(self, user_id: int, target_id: int, guess: str) -> Dict:
-        player = self.players[user_id]
-        if player.stress < 80:
-            return {"error": "Desperation Gambit only available at high stress!"}
-        if player.gambit_used:
-            return {"error": "Desperation Gambit already used."}
-        player.gambit_used = True
-        hits, flashes, static = analyze_guess(guess, self.players[target_id].code)
-        if hits == 4:
-            self.active = False
-            self.winner = user_id
-            return {"result": "Gambit Success! You win!", "win": True}
-        else:
-            player.stress = 100
-            self.active = False
-            return {"result": "System Collapse! You lose.", "win": False}
 
     def get_status(self, user_id: int) -> Dict:
         player = self.players[user_id]
@@ -321,35 +187,70 @@ class PulseCodeGame:
             "mind_link_used": player.mind_link_used,
         }
 
-    # --- Dual Operative Mode ---
+    def ai_make_guess(self, guesser_id: int, target_id: int) -> Dict:
+        if not self.active:
+            return {"error": "Game is not active."}
+        guesser = self.players[guesser_id]
+        target = self.players[target_id]
+
+        # AI generates a guess based on its history (if any)
+        ai_history = [
+            {"guess": h["guess"], "hits": h["result"]["hits"], "flashes": h["result"]["flashes"]}
+            for h in self.history
+            if h["guesser"] == guesser_id
+        ]
+        ai_guess = get_ai_guess(ai_history)
+
+        if len(ai_guess) != 4 or len(set(ai_guess)) != 4 or not ai_guess.isdigit():
+            logger.warning(f"AI generated an invalid guess: {ai_guess}. Generating a random valid guess.")
+            ai_guess = generate_pulse_code() # Fallback to a valid random guess
+
+        hits, flashes, static = analyze_guess(ai_guess, target.code)
+        guesser.guesses.append(ai_guess)
+        guesser.increase_stress(static)
+        penalty = guesser.apply_penalty()
+
+        result = {
+            "guess": ai_guess,
+            "hits": hits,
+            "flashes": flashes,
+            "static": static,
+            "stress": guesser.stress,
+            "penalty": penalty,
+            "win": hits == 4,
+        }
+
+        if hits == 4:
+            self.active = False
+            self.winner = guesser_id
+
+        self.history.append(
+            {"guesser": guesser_id, "target": target_id, "guess": ai_guess, "result": result}
+        )
+        return result
+
     @classmethod
-    def setup_dual_operative(cls, player1_id: int, player2_id: int) -> "PulseCodeGame":
-        # Each player faces a different AI
-        ai1_id = -101
-        ai2_id = -102
-        players = [player1_id, ai1_id, player2_id, ai2_id]
-        ai_personalities = [None, "calculon", None, "maverick"]
-        game = cls(mode="dual", players=players, ai_personalities=ai_personalities)
-        game.turn_order = [player1_id, player2_id]  # Only humans take turns
-        game.ai_targets = {player1_id: ai1_id, player2_id: ai2_id}
+    def setup_architect(cls, player_id: int, ai_personality: str) -> "PulseCodeGame":
+        ai_id = -1
+        players = [player_id, ai_id]
+        ai_personalities = [None, ai_personality] # Player has no AI personality, AI has one
+        game = cls(mode="architect", players=players, ai_personalities=ai_personalities)
+        # In architect mode, player guesses AI's code, and AI guesses player's code
+        game.turn_order = [player_id, ai_id] # Player goes first, then AI
+        game.ai_targets = {player_id: ai_id, ai_id: player_id} # Player targets AI, AI targets Player
         return game
 
-    # --- Triple Threat Mode ---
-    @classmethod
-    def setup_triple_threat(cls, player1_id: int, player2_id: int) -> "PulseCodeGame":
-        ai_id = -201
-        players = [player1_id, player2_id, ai_id]
-        ai_personalities = [None, None, "sentinel"]
-        game = cls(mode="triple", players=players, ai_personalities=ai_personalities)
-        game.turn_order = [player1_id, player2_id, ai_id]
-        return game
-
-    def is_ai(self, user_id: int) -> bool:
-        return self.players[user_id].is_ai
-
-    def get_ai_targets(self) -> Dict[int, int]:
-        # Only for dual mode
-        return getattr(self, "ai_targets", {})
-
-    def get_last_guess_target(self) -> Optional[int]:
-        return self.last_guess_target
+AI_PERSONALITIES = {
+    "calculon": PulseAIPersonality(
+        "Calculon",
+        "You are a cold, calculating robot. You speak in a formal, logical manner and often reference probabilities and efficiency.",
+    ),
+    "maverick": PulseAIPersonality(
+        "Maverick",
+        "You are a hot-shot pilot, full of bravado and confidence. You use slang, are a bit of a show-off, and enjoy taunting your opponents.",
+    ),
+    "sentinel": PulseAIPersonality(
+        "Sentinel",
+        "You are a mysterious, ancient guardian of a forgotten system. Your words are cryptic, wise, and often hint at a deeper, unseen reality.",
+    ),
+}

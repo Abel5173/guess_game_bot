@@ -19,3 +19,13 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
             await update.message.reply_text(
                 "👋 Use /startgame to begin the Impostor Game in this group!"
             )
+
+
+async def imposter_mode_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    logger.info(
+        f"imposter_mode_handler called by user {update.effective_user.id if update.effective_user else 'unknown'}"
+    )
+    if update.message is not None:
+        await update.message.reply_text(
+            "Imposter Mode coming soon! Stay tuned for the ultimate social deception battle!"
+        )
